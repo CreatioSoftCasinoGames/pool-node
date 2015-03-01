@@ -1,0 +1,7 @@
+.rooms.partial.hide
+  table(class="table")
+    tr(ng-repeat="room in rooms")
+      td {{room.id}}
+      td {{room.name}}
+      td
+        a(href="" ng-click="joinRoom(room.id)" class="btn btn-primary") Join

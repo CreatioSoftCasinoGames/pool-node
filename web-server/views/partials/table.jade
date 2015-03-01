@@ -1,0 +1,19 @@
+.table.partial.hide(ng-model="seats")
+  .seats(ng-repeat="seat in seats")
+    .seat(data-player_id='{{seat.playerId}}' ng-click="bindSit($index)" ng-class="{'current': (seat.playerId == playerId)}") 
+      {{seat.playerId}}
+      br
+      {{seat.chips}}
+    {{seat.cards}}
+  .clearfix
+  .well
+    a(href='' ng-click="call()" class="btn btn-primary") Call
+    a(href='' ng-click="check()" class="btn btn-primary") Check
+    a(href='' ng-click="fold()" class="btn btn-primary") Fold
+    a(href='' ng-click="bet()" class="btn btn-primary") Bet
+  .well
+    span {{board}}
+    br 
+    b Round Bets - {{roundBets}}
+    br
+    b Pot - {{pot}}

@@ -1,0 +1,32 @@
+doctype html
+html(ng-app="pool")
+  head
+    title= title
+    link(rel='stylesheet', href='/css/base.css')
+    link(rel='stylesheet', href='/css/bootstrap.css')
+    script(src="/js/lib/socket.io.js")
+    script(src="/js/lib/pomeloclient.js")
+    script(src="/js/lib/jquery.js")
+    script(src="/js/lib/angular.min.js")
+    script(src="/js/client.js")
+    script(src="/js/pool.js")
+  body("data-gate-host"=gateHost "data-gate-port"=gatePort ng-controller="PoolController")
+    .navbar.navbar-default.navbar-static-top
+      .container
+        button(class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-responsive-collapse")
+          span.icon-bar
+          span.icon-bar
+          span.icon-bar
+        a(href="/" class="navbar-brand") Pool
+        .navbar-collapse.collapse.navbar-responsive-collapse.pull-right
+          ul(class="nav navbar-nav")
+            li
+              a(href="#sign_in" class="nav-link" data-partial=".sign_in") Sign In
+            li
+              a(href="" class="nav-link" ng-click="getRooms()") View Rooms
+            li
+              a(href="#sign_up" class="nav-link" data-partial=".sign_up") Sign Up
+    .container
+      .row
+        .col-md-12
+          block content
