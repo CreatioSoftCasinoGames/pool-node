@@ -49,3 +49,34 @@ Handler.prototype.subscribe = function(msg, session, next) {
 	};
   next(null, result);
 };
+
+Handler.prototype.enter= function(msg, session, next) {
+	var that = this;
+	var sessionService = that.app.get('sessionService');
+	var redis = that.app.get("redis");
+
+	//Check here if the user's token is already exist
+	if( !! sessionService.getByUid(msg.login_token)) {
+		next(null, {
+			code: 500,
+			error: true,
+			message: "User is already logged in"
+		});
+		return;
+	}
+	session.bind(msg.login_token);
+	redis.hmset("game_player:"+msg.login_token, "player_server_id", that.app.get('serverId'), "session_id", session.id);
+	session.on('closed', onUserLeave.bind(null, that.app));
+};
+
+var onUserLeave = function(app, session) {
+	if(!session || !session.uid) {
+		return;
+	}
+	app.get('redis').del("game_players" , "game_player:"+session.uid, function(err, data) {
+		backendFetcher.delete("/api/v1/sessions/"+session.uid+".json", {}, app, function(data) {
+			console.log(data.message);
+		});
+	})
+	app.rpc.poker.pokerRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
+};

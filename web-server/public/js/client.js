@@ -1,8 +1,8 @@
-var Bingo = function() {
+var Pool = function() {
 	this.init();
 }
 
-Bingo.prototype = {
+Pool.prototype = {
 
 	init: function() {
 		this.bindNavLinkClick();
@@ -16,8 +16,8 @@ Bingo.prototype = {
 	},
 
 	getRooms: function() {
-		$(document).on("click", "#get-rooms", function() {
-			alert("Hii")
+		$("#get-rooms").on("click", function() {
+			alert("Rooms listing will be displayed!")
 		})
 	},
 
@@ -101,5 +101,5 @@ Bingo.prototype = {
 }
 
 $(function() {	
-	myBingo = new Bingo();
+	myPool = new Pool();
 })
