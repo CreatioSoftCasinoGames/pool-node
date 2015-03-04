@@ -16,15 +16,14 @@ handler.getConnector = function(msg, session, next) {
 	var self = this;
 	var redis = self.app.get("redis");
 	var connectors = this.app.getServersByType('connector');
-	if(msg.is_guest) {
-		backendFetcher.post("/api/v1/sessions.json", {is_guest: true, device_id: msg.device_id}, self.app, function(user) {
+	if(msg.deviceID) {
+		backendFetcher.post("/api/v1/sessions.json", {is_guest: true, device_id: msg.deviceID, first_name: msg.playerName, last_name: ""}, self.app, function(user) {
 			if(user != null) {
 				var res = dispatcher.dispatch(user.login_token, connectors);
 				next(null, {
 					code: 200,
-					host: res.host,
-					port: res.clientPort,
-					user: user,
+					registeredPlayer: user,
+					connector: {host: res.host, port: res.clientPort},
 					loginSuccess: true
 				});
 			}

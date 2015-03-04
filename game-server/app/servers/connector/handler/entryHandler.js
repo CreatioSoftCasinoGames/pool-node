@@ -67,6 +67,11 @@ Handler.prototype.enter= function(msg, session, next) {
 	session.bind(msg.login_token);
 	redis.hmset("game_player:"+msg.login_token, "player_server_id", that.app.get('serverId'), "session_id", session.id);
 	session.on('closed', onUserLeave.bind(null, that.app));
+	next(null, {
+		code: 502,
+		uid: msg.login_token,
+		message: "User is ready to enter"
+	})
 };
 
 var onUserLeave = function(app, session) {
