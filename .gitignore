@@ -23,7 +23,7 @@ build/Release
 # Commenting this out is preferred by some people, see
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
 node_modules
-/game-server/config/bingoConstants.json
+/game-server/config/poolConstants.json
 /game-server/config/servers.json
 /web-server/config/constants.json
 
