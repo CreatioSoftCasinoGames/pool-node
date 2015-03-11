@@ -83,5 +83,5 @@ var onUserLeave = function(app, session) {
 			console.log(data.message);
 		});
 	})
-	app.rpc.poker.pokerRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
+	app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
 };
