@@ -74,6 +74,20 @@ Handler.prototype.enter= function(msg, session, next) {
 	})
 };
 
+Handler.prototype.joinClub= function(msg, session, next) {
+	var that = this;
+	that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubId, true, function(data) {
+		console.log(data)
+		session.set("clubId", data.clubId);
+		session.push("clubId", function(err) {
+			if(err) {
+				console.error('set clubId for session service failed! error is : %j', err.stack);
+			}
+		});
+		next(null, data)
+	});
+};
+
 var onUserLeave = function(app, session) {
 	if(!session || !session.uid) {
 		return;
