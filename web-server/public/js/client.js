@@ -8,17 +8,20 @@ Pool.prototype = {
 		this.bindNavLinkClick();
 		this.bindLoginClick();
 		this.signUp();
-		this.getRooms();
+		this.getClubs();
 		this.pomelo = window.pomelo;
 		this.host = $("body").data("gate-host");
 		this.port = $("body").data("gate-port");
 		this.user = null;
+
 	},
 
-	getRooms: function() {
-		$("#get-rooms").on("click", function() {
-			alert("Rooms listing will be displayed!")
-		})
+	getClubs: function() {
+		// var that = this;
+		// $(document).on("click", "#get-clubs", function() {
+		// 	alert("asdsad")
+		// 	that.showPartial(".clubs");
+		// })
 	},
 
 	signUp: function() {
