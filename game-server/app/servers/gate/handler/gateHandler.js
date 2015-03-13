@@ -70,13 +70,15 @@ handler.getConnector = function(msg, session, next) {
 		if(!msg.is_guest) {
 			userSession.getUser(msg.email, msg.password, self.app, function(user){
 				if(user != null){
-					var res = dispatcher.dispatch(user.login_token, connectors);
-					next(null, {
-						code: 200,
-						host: res.host,
-						port: res.clientPort,
-						user: user,
-						loginSuccess: true
+					redis.hmset("game_player:"+user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, function(err, data) {
+						var res = dispatcher.dispatch(user.login_token, connectors);
+						next(null, {
+							code: 200,
+							host: res.host,
+							port: res.clientPort,
+							user: user,
+							loginSuccess: true
+						});
 					});
 				} else {
 					next(null, {
