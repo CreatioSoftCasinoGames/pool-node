@@ -17,13 +17,10 @@ PoolRemote.prototype = {
 	add: function(uid, sid, clubId, flag, cb) {
 		var that = this;
 		var channel = that.channelService.getChannel(clubId, flag);
-		console.log(channel);
 		var redis = that.app.get("redis");
-		board = new poolLogic.Board(clubId, redis);
-		that.addEventListers(channel);
-		that.returnAddData(channel, clubId, sid, uid, cb);
 		if(!channel.board) {
 			channel.board = new poolLogic.Board(clubId, redis);
+			channel.board.addPlayer(uid)
 			that.addEventListers(channel);
 			that.returnAddData(channel, clubId, sid, uid, cb);
 		} else {

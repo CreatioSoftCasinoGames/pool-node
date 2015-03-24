@@ -20,4 +20,10 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
     })
   };
 
+  $scope.general = function() {
+    pomelo.request("pool.poolHandler.general", {name: "Amrendra", rank: 10}, function(data) {
+      console.log(data)
+    });
+  }
+
 }])

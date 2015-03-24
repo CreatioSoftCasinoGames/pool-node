@@ -82,19 +82,21 @@ Handler.prototype.joinClub= function(msg, session, next) {
 	var redis = that.app.get("redis");
 	redis.hmget("game_player:"+session.uid, "player_level", function(err, playerLevel) {
 		redis.zadd("club:"+msg.clubId, parseInt(playerLevel), session.uid, function(err, data) {
-			session.set("clubId", msg.clubId);
-			that.getOpponent({clubId: msg.clubId, playerId: session.uid, playerLevel: parseInt(playerLevel), playerIp: msg.playerIp}, function(responseData){
-				if(!!responseData){
-					if(responseData.success && responseData.message == "Opponent found!") {
-						responseData.playerIp = msg.playerIp;
-						responseData.isServer = true;
-						next(null, responseData)
-					} {
-						next(null, responseData)
-					}
-				}
+			that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubId, true, function(data) {
+				session.set("clubId", msg.clubId);
+					that.getOpponent({clubId: msg.clubId, playerId: session.uid, playerLevel: parseInt(playerLevel), playerIp: msg.playerIp}, function(responseData){
+						if(!!responseData){
+							if(responseData.success && responseData.message == "Opponent found!") {
+								responseData.playerIp = msg.playerIp;
+								responseData.isServer = true;
+								next(null, responseData)
+							} {
+								next(null, responseData)
+							}
+						}
+					});
+				});
 			});
-		});
 	})
 };
 
