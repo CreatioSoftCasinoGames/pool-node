@@ -48,6 +48,11 @@ Handler.prototype = {
 		});
 	},
 
+	// sendMessageToUser: function(uid, serverId, msg, route) {
+	// 		this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {
+ //      });
+	// 	},
+
 	generalProgress: function(channel, playerId, data) {
 		data = _.omit(data, 'timestamp', '__route__');
 		channel.pushMessage("generalProgress", {

@@ -82,21 +82,33 @@ Handler.prototype.joinClub= function(msg, session, next) {
 	var redis = that.app.get("redis");
 	redis.hmget("game_player:"+session.uid, "player_level", function(err, playerLevel) {
 		redis.zadd("club:"+msg.clubId, parseInt(playerLevel), session.uid, function(err, data) {
-			that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubId, true, function(data) {
-				session.set("clubId", msg.clubId);
-					that.getOpponent({clubId: msg.clubId, playerId: session.uid, playerLevel: parseInt(playerLevel), playerIp: msg.playerIp}, function(responseData){
-						if(!!responseData){
-							if(responseData.success && responseData.message == "Opponent found!") {
-								responseData.playerIp = msg.playerIp;
-								responseData.isServer = true;
-								next(null, responseData)
-							} {
-								next(null, responseData)
-							}
-						}
-					});
-				});
+			session.set("clubId", msg.clubId);
+			that.getOpponent({clubId: msg.clubId, playerId: session.uid, playerLevel: parseInt(playerLevel), playerIp: msg.playerIp}, function(responseData){
+				console.log('Success opponent - ' + responseData.success );
+				if(!!responseData){
+					if(responseData.success && responseData.message == "Opponent found!") {
+						responseData.playerIp = msg.playerIp;
+						responseData.isServer = true;
+						next(null, responseData)
+					} {
+						next(null, responseData)
+					}
+				}
 			});
+		});
+	})
+};
+
+Handler.prototype.sendMessage= function(msg, session, next) {
+	var that = this;
+	var redis = that.app.get("redis");
+	redis.hgetall("game_player:"+session.uid, function(err, data) {
+		opponentId = data.opponentId;
+		console.log(opponentId);
+		serverId = data.player_server_id;
+		that.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [opponentId, msg, "generalProgress"]}, function(data) {
+			console.log(data);
+    });
 	})
 };
 
@@ -115,19 +127,23 @@ Handler.prototype.getOpponent= function(msg, next) {
 					redis.zrem("club:"+msg.clubId, parseInt(playerLevel), playerList[0], function(err, data) {
 						redis.hmset("game_player:"+msg.playerId, "playing", true, function(err, playerLevel) {
 							redis.hmset("game_player:"+playerList[0], "playing", true, function(err, playerLevel) {
-								redis.hgetall("game_player:"+playerList[0], function(err, player) {
-									next({
-										message: "Opponent found!",
-										success: true,
-										playerId: msg.playerId,
-										opponentId: playerList[0],
-										opponentName: player.player_name,
-										opponentXp: player.player_xp,
-										opponentLevel: player.player_level,
-										opponentImage: player.player_image,
-										isDummy: false
-									})
-								})
+								redis.hmset("game_player:"+msg.playerId, "opponentId", playerList[0], function(err, playerLevel) {
+									redis.hmset("game_player:"+playerList[0], "opponentId", msg.playerId, function(err, playerLevel) {
+										redis.hgetall("game_player:"+playerList[0], function(err, player) {
+											next({
+												message: "Opponent found!",
+												success: true,
+												playerId: msg.playerId,
+												opponentId: playerList[0],
+												opponentName: player.player_name,
+												opponentXp: player.player_xp,
+												opponentLevel: player.player_level,
+												opponentImage: player.player_image,
+												isDummy: false
+											})
+										});
+									});
+								});
 							});
 						});
 					});
@@ -146,19 +162,23 @@ Handler.prototype.getOpponent= function(msg, next) {
 								redis.zrem("club:"+msg.clubId, parseInt(playerLevel), playerList[0], function(err, data) {
 									redis.hmset("game_player:"+msg.playerId, "playing", true, function(err, playerLevel) {
 										redis.hmset("game_player:"+playerList[0], "playing", true, function(err, playerLevel) {
-											redis.hgetall("game_player:"+playerList[0], function(err, player) {
-												next({
-													message: "Opponent found!",
-													success: true,
-													playerId: msg.playerId,
-													opponentId: playerList[0],
-													opponentName: player.player_name,
-													opponentXp: player.player_xp,
-													opponentLevel: player.player_level,
-													opponentImage: player.player_image,
-													isDummy: false
-												})
-											})
+											redis.hmset("game_player:"+msg.playerId, "opponentId", playerList[0], function(err, playerLevel) {
+												redis.hmset("game_player:"+playerList[0], "opponentId", msg.playerId, function(err, playerLevel) {
+													redis.hgetall("game_player:"+playerList[0], function(err, player) {
+														next({
+															message: "Opponent found!",
+															success: true,
+															playerId: msg.playerId,
+															opponentId: playerList[0],
+															opponentName: player.player_name,
+															opponentXp: player.player_xp,
+															opponentLevel: player.player_level,
+															opponentImage: player.player_image,
+															isDummy: false
+														})
+													});
+												});
+											});
 										});
 									});
 								});
@@ -208,5 +228,5 @@ var onUserLeave = function(app, session) {
 			console.log(data.message);
 		});
 	})
-	app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
+	// app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
 };

@@ -21,9 +21,18 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
   $scope.general = function() {
-    pomelo.request("pool.poolHandler.general", {name: "Amrendra", rank: 10}, function(data) {
+    // pomelo.request("pool.poolHandler.general", {name: "Amrendra", rank: 10}, function(data) {
+    window.pomelo.request("connector.entryHandler.sendMessage", {name: "Amrendra", rank: 10}, function(data) {
       console.log(data)
     });
+  };
+
+   var listenCallbacks = function() {
+
+    window.pomelo.on("generalProgress", function(data) {
+      alert("amrendra");
+      console.log(data)
+    })
   }
 
 }])

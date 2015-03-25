@@ -18,15 +18,18 @@ handler.getConnector = function(msg, session, next) {
 	var connectors = this.app.getServersByType('connector');
 	if(msg.deviceID) {
 		backendFetcher.post("/api/v1/sessions.json", {is_guest: true, device_id: msg.deviceID, first_name: msg.playerName, last_name: ""}, self.app, function(user) {
-			if(user != null) {
-				var res = dispatcher.dispatch(user.login_token, connectors);
-				next(null, {
-					code: 200,
-					registeredPlayer: user,
-					connector: {host: res.host, port: res.clientPort},
-					loginSuccess: true
-				});
-			}
+			redis.sadd("game_players", "game_player:"+user.login_token);
+			redis.hmset("game_player:"+user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, function(err, data) {
+				if(user != null) {
+					var res = dispatcher.dispatch(user.login_token, connectors);
+					next(null, {
+						code: 200,
+						registeredPlayer: user,
+						connector: {host: res.host, port: res.clientPort},
+						loginSuccess: true
+					});
+				}
+			});
 		})
 	} else if(!!msg.fb_id && !!msg.email && !!msg.first_name && !!msg.my_friends) {
 		backendFetcher.post("/api/v1/sessions.json", {fb_id: msg.fb_id, email: msg.email, first_name: msg.first_name, last_name: msg.last_name, fb_friend_list: msg.my_friends}, self.app, function(user) {
@@ -70,6 +73,7 @@ handler.getConnector = function(msg, session, next) {
 		if(!msg.is_guest) {
 			userSession.getUser(msg.email, msg.password, self.app, function(user){
 				if(user != null){
+					redis.sadd("game_players", "game_player:"+user.login_token);
 					redis.hmset("game_player:"+user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, function(err, data) {
 						var res = dispatcher.dispatch(user.login_token, connectors);
 						next(null, {

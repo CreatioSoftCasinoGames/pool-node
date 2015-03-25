@@ -24,6 +24,7 @@ PoolRemote.prototype = {
 			that.addEventListers(channel);
 			that.returnAddData(channel, clubId, sid, uid, cb);
 		} else {
+			channel.board.addPlayer(uid)
 			that.returnAddData(channel, clubId, sid, uid, cb);
 		}
 	},

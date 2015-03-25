@@ -2,7 +2,6 @@ var _ = require('underscore');
 var events = require('events');
 
 var Board = function(clubId, redis) {
-	console.log(clubId)
 	this.clubId 		 	= clubId;
 	this.redis 				= redis;
 	this.gamePlayers 	=	[];
@@ -24,6 +23,7 @@ Board.prototype = {
 		var that = this;
 		var player = new Player(playerId, that.game);
 		that.players.push(player)
+		// console.log(this.players)
 	},
 
 	restartGame: function() {
@@ -33,11 +33,6 @@ Board.prototype = {
 		if(that.playersToAdd.length >= 2) {
 			console.log("Game will start here !");
 		}
-	},
-
-	addPlayer: function(playerId) {
-		var that = this;
-		var player = new Player(playerId);
 	},
 };
 
