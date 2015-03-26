@@ -19,7 +19,7 @@ handler.getConnector = function(msg, session, next) {
 	if(msg.deviceID) {
 		backendFetcher.post("/api/v1/sessions.json", {is_guest: true, device_id: msg.deviceID, first_name: msg.playerName, last_name: ""}, self.app, function(user) {
 			redis.sadd("game_players", "game_player:"+user.login_token);
-			redis.hmset("game_player:"+user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, function(err, data) {
+			redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, function(err, data) {
 				if(user != null) {
 					var res = dispatcher.dispatch(user.login_token, connectors);
 					next(null, {

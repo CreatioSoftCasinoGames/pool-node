@@ -10,6 +10,7 @@ var EntryRemote = function(app) {
 EntryRemote.prototype = {
 
 	sendMessageToUser: function(uid, msg, route, cb) {
+		console.log(uid);
 		var connector = this.app.components.__connector__;
 		connector.send(null, route, msg, [this.sessionService.getByUid(uid)[0].id], {}, function(err) {
 			cb(null)
