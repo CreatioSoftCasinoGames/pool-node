@@ -115,8 +115,9 @@ Handler.prototype.sendMessage= function(msg, session, next) {
 	redis.hgetall("game_player:"+session.uid, function(err, data) {
 		opponentId = data.opponentId;
 		serverId = data.player_server_id;
+		console.log(session.uid + ' and opponent - ' + opponentId + ' and server id - ' + serverId)
 		that.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [opponentId, msg, "generalProgress"]}, function(data) {
-			console.log(data);
+			console.log('Message sent to ' + opponentId);
     });
 	})
 };
@@ -127,8 +128,6 @@ Handler.prototype.getOpponent= function(msg, next) {
 	var opponentFound = false;
 	redis.zrangebyscore("club:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
 		playerList = _.without(playerList, msg.playerId); //Remove the current player from list
-		// console.log('Available opponents !')
-		// console.log(playerList)
 		if(playerList.length > 0 && !opponentFound) {
 			opponentFound = true;
 
@@ -241,7 +240,7 @@ Handler.prototype.getOpponent= function(msg, next) {
 													message: "Opponent found!",
 													success: true,
 													playerId: playerDetails.player_id,
-													opponentId: opponentDetails.opponentId,
+													opponentId: opponentDetails.player_id,
 													opponentName: opponentDetails.player_name,
 													opponentXp: opponentDetails.player_xp,
 													opponentLevel: opponentDetails.player_level,
@@ -265,6 +264,7 @@ Handler.prototype.getOpponent= function(msg, next) {
 };
 
 var onUserLeave = function(app, session) {
+	console.log(session.uid + ' is going to log out!')
 	if(!session || !session.uid) {
 		return;
 	}
