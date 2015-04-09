@@ -7,8 +7,8 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   	$scope.clubs = data;
   })
 
-  $scope.joinClub = function(clubId) {
-		window.pomelo.request("connector.entryHandler.joinClub", {clubId: clubId, playerIp: "127.0.0.1"}, function(data) {
+  $scope.joinClub = function(clubConfigId) {
+		window.pomelo.request("connector.entryHandler.joinClub", {clubConfigId: clubConfigId}, function(data) {
       console.log(data);
       myPool.showPartial(".club");
     });

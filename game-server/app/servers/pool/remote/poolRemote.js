@@ -14,20 +14,43 @@ var PoolRemote = function(app) {
 
 PoolRemote.prototype = {
 
-	add: function(uid, sid, clubId, flag, cb) {
+	findClub:function(clubConfigId, cb) {
 		var that = this;
-		var channel = that.channelService.getChannel(clubId, flag);
-		var redis = that.app.get("redis");
-		if(!channel.board) {
-			channel.board = new poolLogic.Board(clubId, redis);
-			channel.board.addPlayer(uid)
-			that.addEventListers(channel);
-			that.returnAddData(channel, clubId, sid, uid, cb);
-		} else {
-			channel.board.addPlayer(uid)
-			that.returnAddData(channel, clubId, sid, uid, cb);
-		}
+        freeClubs = false,
+				redis = that.app.get("redis");
+
+		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 1, -1, "limit", 0, 1, function(err, data) {
+			if(data.length!=0) {
+				freeClubs = true;
+				cb(parseInt(data[0].split(":")[1]));
+			} else if(data.length == 0 || !freeClubs) {
+				backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
+					if(data.valid) {
+						redisUtil.createClub(data.club, redis);
+						cb(parseInt(data.club.id));
+					}
+				})
+			}
+		});
 	},
+  
+	add: function(uid, sid, clubConfigId, flag, cb) {
+		var that = this;
+		that.findClub(clubConfigId, function(clubId) {
+			that.addToClub(uid, sid, clubId, flag, false, cb);
+
+		});
+	},
+
+  addToClub: function(uid, sid, clubId, flag, forceJoin, cb) {
+		var that 	= this;
+				// channel = that.channelService.getChannel(clubId, flag),
+				// redis 	= that.app.get("redis");
+		cb({
+			success: true,
+			clubConfigId: clubId
+		}) 
+	}, 
 
 	returnAddData: function(channel, clubId, sid, uid, cb) {
 		cb({
@@ -41,4 +64,5 @@ PoolRemote.prototype = {
 		var board = channel.board;
 		var redis = that.app.get('redis');
 	}
+
 }

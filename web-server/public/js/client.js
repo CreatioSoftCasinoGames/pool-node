@@ -10,6 +10,7 @@ Pool.prototype = {
 		this.signUp();
 		this.getClubConfigs();
 		this.guestLoginClick();
+		this.facebookLoginClick();
 		this.pomelo = window.pomelo;
 		this.host = $("body").data("gate-host");
 		this.port = $("body").data("gate-port");
@@ -88,7 +89,29 @@ Pool.prototype = {
 		    port: that.port,
 		    log: true
 		  }, function() {
-		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, device_id: "amrendrapc0123456789"}, function(data) {
+		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, deviceID: "amrendrapc0123456789"}, function(data) {
+		      if(data.loginSuccess){
+						pomelo.disconnect();
+						that.user = data.user;
+						that.connectPomelo(data.host, data.port);
+				 	} else {
+				 		console.log("Invalid username or password");
+			    }
+		    });
+		  });
+			return false;
+		})
+	},
+
+	facebookLoginClick: function() {
+		var that = this;
+		$("#facebook-sign-in-form").on("submit", function() {
+		  pomelo.init({
+		    host: that.host,
+		    port: that.port,
+		    log: true
+		  }, function() {
+		    pomelo.request("gate.gateHandler.getConnector", { fb_id: "neeraj1234", fb_friends_list: "[154653546]"}, function(data) {
 		      if(data.loginSuccess){
 						pomelo.disconnect();
 						that.user = data.user;

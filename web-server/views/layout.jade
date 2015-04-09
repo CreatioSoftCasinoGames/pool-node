@@ -17,7 +17,7 @@ html(ng-app="pool")
             li
               a(href="#sign_in" class="nav-link" data-partial=".sign_in") Sign In
             li
-              a(href="#get-clubs" class="nav-link" data-partial=".clubs") View Clubs
+              a(href="#get-clubs" class="nav-link" ng-click="getClubConfigs()") View Clubs
             li
               a(href="#sign_up" class="nav-link" data-partial=".sign_up") Sign Up
     .container

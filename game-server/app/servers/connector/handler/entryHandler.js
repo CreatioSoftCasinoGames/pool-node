@@ -77,7 +77,27 @@ Handler.prototype.enter= function(msg, session, next) {
 	})
 };
 
-Handler.prototype.joinClub= function(msg, session, next) {
+
+Handler.prototype.joinClub=function(msg, session, next) {
+  var that = this;
+  that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, true, function(data) {
+    session.set("clubConfigId", msg.clubConfigId);
+    // session.set("roomId", data.roomId);
+    session.push("clubConfigId", function(err) {
+      if (err) {
+        console.error('set roomId for session service failed! error is : %j', err.stack);
+      }
+    });
+    session.push("roomId", function(err) {
+      if (err) {
+        console.error('set roomId for session service failed! error is : %j', err.stack);
+      }
+    });
+    next(null, data)
+  });
+},
+
+Handler.prototype.getOpponentPlayer= function(msg, session, next) {
 	console.log(msg)
 	console.log('Player id - ' + session.uid);
 	var that = this;
