@@ -14,6 +14,16 @@ var Handler = function(app) {
 
 Handler.prototype = {
 
+	getClubConfigs: function(msg, session, next) {
+		var that = this;
+		backendFetcher.get("/api/v1/club_configs.json", {}, that.app, function(data) {
+			console.log(data);
+			next(null, {
+				club_configs: data
+			})
+		})
+	},
+
 	getPlayerAndChannel: function(session, cb) {
 		var that = this;
 		var channel = that.channelService.getChannel(1, false);
@@ -60,4 +70,40 @@ Handler.prototype = {
 			data: data
 		});
 	},
+
+	getOnlinePlayers: function(msg, session, next) {
+		console.log(msg);
+		var that = this;
+		if(msg.gameType == "Tournament"){
+			next(null, {
+			onlinePlayer: [ {clubId: 1,
+												player: 10}, 
+											{clubId: 2,
+											  player: 20},  
+											{clubId: 3,
+											  player: 30}, 
+											{clubId: 4,
+											  player: 40}, 
+											{clubId: 5,
+											  player: 50}
+											]
+		  })
+		}else {
+			next(null, {
+			onlinePlayer: [ {clubId: 6,
+												player: 10}, 
+											{clubId: 7,
+											  player: 20},  
+											{clubId: 8,
+											  player: 30}, 
+											{clubId: 9,
+											  player: 40}, 
+											{clubId: 10,
+											  player: 50}
+											]
+		  })
+		};
+	}
+
+
 }

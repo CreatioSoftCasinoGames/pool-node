@@ -1,0 +1,10 @@
+.club_configs.partial.hide
+  table(class="table")
+    tr(ng-repeat="club_configs in club_configs")
+      td {{club_configs.id}}
+      td {{club_configs.name}}
+      td {{club_configs.entry_fees}}
+      td {{club_configs.winner_amount}}
+      td
+        a(href="" ng-click="joinClubConfigs(club_configs.id)" class="btn btn-primary") Join
+

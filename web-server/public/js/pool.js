@@ -14,6 +14,22 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
     });
   };
 
+  $scope.getClubConfigs = function() {
+    window.pomelo.request("pool.poolHandler.getClubConfigs", {}, function(data) {
+      console.log(data.club_configs)
+      myPool.showPartial(".club_configs");
+      $scope.$apply(function () {
+        $scope.club_configs = data.club_configs;
+      });
+    });
+  };
+
+  $scope.getOnlinePlayers = function() {
+    window.pomelo.request("pool.poolHandler.getOnlinePlayers", {gameType :"Tournament"}, function(data) {
+      console.log(data)
+    })
+  };
+
    $scope.sit = function() {
     window.pomelo.request("pool.poolHandler.sit", {}, function(data) {
       console.log(data)
