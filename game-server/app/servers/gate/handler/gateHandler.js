@@ -55,7 +55,7 @@ handler.getConnector = function(msg, session, next) {
 				if(user != null){
 					var res = dispatcher.dispatch(user.id, connectors);
 					redis.sadd("game_players", "game_player:"+user.login_token);
-			  	redis.hmset("game_player:"+user.login_token, "player_id", user.id, "first_name", user.first_name, "player_name", (user.first_name + ' ' + user.last_name), "player_image", user.image_url, "is_bot", false);
+			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false)
 					next(null, {
 						code: 200,
 						host: res.host,
@@ -78,10 +78,11 @@ handler.getConnector = function(msg, session, next) {
 },
 
 handler.getHostAndPort = function(msg, next) {
+	console.log(msg.user);
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
-    msg.redis.hmset("game_player:"+msg.user.login_token, "previous_login_token", msg.user.previous_login_token, "player_id", msg.user.id, "first_name", msg.user.first_name, "player_name", (msg.user.first_name + ' ' + msg.user.last_name), "player_image", msg.user.image_url);
+    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false)
     next({
       code: 200,
       host: res.host,

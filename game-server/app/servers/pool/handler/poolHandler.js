@@ -17,7 +17,7 @@ Handler.prototype = {
 
 	getClubConfigs: function(msg, session, next) {
 		var that = this;
-		backendFetcher.get("/api/v1/club_configs.json", {}, that.app, function(data) {
+		backendFetcher.get("/api/v1/club_configs.json", {club_type: msg.club_type}, that.app, function(data) {
 			console.log(data);
 			next(null, {
 				club_configs: data

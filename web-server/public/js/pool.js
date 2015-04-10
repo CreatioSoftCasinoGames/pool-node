@@ -8,15 +8,14 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   })
 
   $scope.joinClub = function(clubConfigId) {
-		window.pomelo.request("connector.entryHandler.joinClub", {clubConfigId: clubConfigId}, function(data) {
-      console.log(data);
+		window.pomelo.request("connector.entryHandler.joinClub", {clubConfigId: clubConfigId, playerIp: "192.168.2.101"}, function(data) {
+      console.log(playerIp);
       myPool.showPartial(".club");
     });
   };
 
   $scope.getClubConfigs = function() {
-    window.pomelo.request("pool.poolHandler.getClubConfigs", {}, function(data) {
-      console.log(data.club_configs)
+    window.pomelo.request("pool.poolHandler.getClubConfigs", {club_type: "OneToOne"}, function(data) {
       myPool.showPartial(".club_configs");
       $scope.$apply(function () {
         $scope.club_configs = data.club_configs;

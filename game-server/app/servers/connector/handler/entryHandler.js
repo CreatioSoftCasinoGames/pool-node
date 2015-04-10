@@ -80,8 +80,8 @@ Handler.prototype.enter= function(msg, session, next) {
 
 Handler.prototype.joinClub=function(msg, session, next) {
   var that = this;
-  that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, true, function(data) {
-    session.set("clubConfigId", msg.clubConfigId);
+  that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, session.player_ip, true, function(data) {
+    // session.set("clubConfigId", msg.clubConfigId);
     // session.set("roomId", data.roomId);
     session.push("clubConfigId", function(err) {
       if (err) {
@@ -143,10 +143,13 @@ Handler.prototype.sendMessage= function(msg, session, next) {
 };
 
 Handler.prototype.getOpponent= function(msg, next) {
+	console.log(msg)
 	var that = this;
 	var redis = that.app.get("redis");
 	var opponentFound = false;
 	redis.zrangebyscore("club:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
+		console.log(err);
+		console.log(playerList);
 		playerList = _.without(playerList, msg.playerId); //Remove the current player from list
 		if(playerList.length > 0 && !opponentFound) {
 			opponentFound = true;
