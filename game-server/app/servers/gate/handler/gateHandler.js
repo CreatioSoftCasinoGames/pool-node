@@ -78,17 +78,23 @@ handler.getConnector = function(msg, session, next) {
 },
 
 handler.getHostAndPort = function(msg, next) {
-	console.log(msg.user);
+	var hostAndPort = this.app.sessionService.service.sessions
+	for (first in hostAndPort) {
+		var ipAddress = this.app.sessionService.service.sessions[first].__socket__.remoteAddress.ip
+		console.log(ipAddress)
+		break;
+	}	
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
-    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false)
+    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "yoursIp", ipAddress )
     next({
       code: 200,
       host: res.host,
       port: res.clientPort,
       user: msg.user,
-      loginSuccess: true
+      loginSuccess: true,
+      yoursIp: ipAddress
     });
   }
 },

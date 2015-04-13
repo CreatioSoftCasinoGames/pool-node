@@ -9,7 +9,6 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
 
   $scope.joinClub = function(clubConfigId) {
 		window.pomelo.request("connector.entryHandler.joinClub", {clubConfigId: clubConfigId, playerIp: "192.168.2.101"}, function(data) {
-      console.log(playerIp);
       myPool.showPartial(".club");
     });
   };

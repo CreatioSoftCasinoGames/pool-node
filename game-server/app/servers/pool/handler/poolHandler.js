@@ -73,7 +73,6 @@ Handler.prototype = {
 	},
 
 	getOnlinePlayers: function(msg, session, next) {
-		console.log(msg);
 		var that = this;
 		if(msg.gameType == "Tournament"){
 			next(null, {

@@ -79,8 +79,9 @@ Handler.prototype.enter= function(msg, session, next) {
 
 
 Handler.prototype.joinClub=function(msg, session, next) {
+	console.log('Player id - ' + session.uid);
   var that = this;
-  that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, session.player_ip, true, function(data) {
+  that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
     // session.set("clubConfigId", msg.clubConfigId);
     // session.set("roomId", data.roomId);
     session.push("clubConfigId", function(err) {
@@ -98,8 +99,6 @@ Handler.prototype.joinClub=function(msg, session, next) {
 },
 
 Handler.prototype.getOpponentPlayer= function(msg, session, next) {
-	console.log(msg)
-	console.log('Player id - ' + session.uid);
 	var that = this;
 	var redis = that.app.get("redis");
 	redis.hmset("game_player:"+session.uid, "player_ip", msg.playerIp, function(err, playerIp) {
