@@ -89,7 +89,7 @@ Pool.prototype = {
 		    port: that.port,
 		    log: true
 		  }, function() {
-		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, deviceID: "amrendrapc0123456789"}, function(data) {
+		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, deviceID: "amrendrapc0123456789", playerName: "neeraj"}, function(data) {
 		      if(data.loginSuccess){
 						pomelo.disconnect();
 						that.user = data.user;
@@ -111,7 +111,7 @@ Pool.prototype = {
 		    port: that.port,
 		    log: true
 		  }, function() {
-		    pomelo.request("gate.gateHandler.getConnector", { fb_id: "neeraj1234", fb_friends_list: "[154653546]"}, function(data) {
+		    pomelo.request("gate.gateHandler.getConnector", { fb_id: "neeraj1234", fb_friends_list: "[154653546]", playerName: "neeraj"}, function(data) {
 		      if(data.loginSuccess){
 						pomelo.disconnect();
 						that.user = data.user;

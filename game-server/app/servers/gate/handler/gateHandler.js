@@ -19,19 +19,19 @@ handler.getConnector = function(msg, session, next) {
   var getProfileRoute = "/api/v1/sessions.json"
 
 	if(msg.is_guest) {
-		backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.deviceID}, self.app, function(user) {
+		backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.deviceID, first_name: msg.playerName}, self.app, function(user) {
 		  self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })
 		})
 	} else if(!!msg.fb_id && !!msg.fb_friends_list && !msg.deviceID) {
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, fb_friends_list: msg.fb_friends_list, device_id: msg.deviceID}, self.app, function(user) {
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, fb_friends_list: msg.fb_friends_list, device_id: msg.deviceID, first_name: msg.playerName}, self.app, function(user) {
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })
 		})
 	} else if(!!msg.fb_id && !!msg.fb_friends_list && !!msg.deviceID) {
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, fb_friends_list: msg.friend_list, device_id: msg.deviceID}, self.app, function(user) {
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, fb_friends_list: msg.friend_list, device_id: msg.deviceID, first_name: msg.playerName}, self.app, function(user) {
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })
