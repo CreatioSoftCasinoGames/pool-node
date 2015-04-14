@@ -1,5 +1,6 @@
 var poolLogic = require('../../../services/poolLogic');
 var backendFetcher = require('../../../util/backendFetcher');
+var dbLogger = require('../../../services/dbLogger');
 var redisUtil = require('../../../util/redisUtil');
 var _ = require('underscore');
 
@@ -10,6 +11,7 @@ module.exports = function(app) {
 var PoolRemote = function(app) {
 	this.app = app;
 	this.channelService = app.get('channelService');
+	dbLogger.setApp(app);
 };
 
 PoolRemote.prototype = {
@@ -45,8 +47,19 @@ PoolRemote.prototype = {
   addToClub: function(uid, sid, clubId, flag, forceJoin, playerIp, next) {
 		var that = this;
 		var redis = that.app.get("redis");
+		var channel = that.channelService.getChannel(clubId, flag);
+
+		redis.hgetall("club:"+clubId, function(err, clubData) {
+			redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+				var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+		    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
+			  });
+			});
+		});
+
 		redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
 		  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
+		  	channel.board = new poolLogic.Board(clubId, redis, that.app);
 				redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
 					that.getOpponent({clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
 						console.log('Success opponent - ' + responseData.success );
@@ -54,12 +67,13 @@ PoolRemote.prototype = {
 							if(responseData.success && responseData.message == "Opponent found!") {
 								redis.hmget("game_player:"+responseData.opponentId, "player_ip", playerIp, function(err, opponentIp) {
 									// responseData.opponentIp = opponentIp[0];
-									// responseData.isServer = true;
+									responseData.clubId = clubId;
 									console.log('IP and Server added')
 									next(responseData)
 								});
 							} else {
 								console.log('This should not be sent!')
+								responseData.clubId = clubId;
 								next(responseData)
 							}
 						}

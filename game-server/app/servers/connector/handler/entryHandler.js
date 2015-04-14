@@ -79,19 +79,21 @@ Handler.prototype.enter= function(msg, session, next) {
 
 
 Handler.prototype.joinClub=function(msg, session, next) {
+	console.log(msg);
 	console.log('Player id - ' + session.uid);
   var that = this;
   that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
-    // session.set("clubConfigId", msg.clubConfigId);
-    // session.set("roomId", data.roomId);
+    session.set("clubConfigId", msg.clubConfigId);
+    console.log(data.clubId);
+    session.set("clubId", data.clubId);
     session.push("clubConfigId", function(err) {
       if (err) {
-        console.error('set roomId for session service failed! error is : %j', err.stack);
+        console.error('set clubId for session service failed! error is : %j', err.stack);
       }
     });
-    session.push("roomId", function(err) {
+    session.push("clubId", function(err) {
       if (err) {
-        console.error('set roomId for session service failed! error is : %j', err.stack);
+        console.error('set clubId for session service failed! error is : %j', err.stack);
       }
     });
     next(null, data)
@@ -103,7 +105,6 @@ Handler.prototype.getOpponentPlayer= function(msg, session, next) {
 	var redis = that.app.get("redis");
 	redis.hmset("game_player:"+session.uid, "player_ip", msg.playerIp, function(err, playerIp) {
 		redis.hgetall("game_player:"+session.uid, function(err, playerDetails) {		
-			// console.log(playerDetails)
 			redis.zadd("club:"+msg.clubId, parseInt(playerDetails.player_level), session.uid, function(err, data) {
 				session.set("clubId", msg.clubId);
 				that.getOpponent({clubId: msg.clubId, playerId: session.uid, playerLevel: parseInt(playerDetails.player_level), playerIp: msg.playerIp}, function(responseData){
@@ -129,6 +130,7 @@ Handler.prototype.getOpponentPlayer= function(msg, session, next) {
 };
 
 Handler.prototype.sendMessage= function(msg, session, next) {
+	console.log()
 	var that = this;
 	var redis = that.app.get("redis");
 	redis.hgetall("game_player:"+session.uid, function(err, data) {

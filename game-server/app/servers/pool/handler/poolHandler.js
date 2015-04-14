@@ -7,6 +7,11 @@ module.exports = function(app) {
 	return new Handler(app);
 };
 
+var PoolRemote = function(app) {
+	this.app = app;
+	this.channelService = app.get('channelService');
+};
+
 var Handler = function(app) {
 	this.app = app;
 	this.poolRemote = PokerRemote(app)
@@ -27,8 +32,11 @@ Handler.prototype = {
 
 	getPlayerAndChannel: function(session, cb) {
 		var that = this;
-		var channel = that.channelService.getChannel(1, false);
-		var player = _.findWhere(channel.board.players, {playerId: session.uid});
+		var channel = that.channelService.getChannel(session.get('clubId'), false);
+		var player = null;
+		if(!!channel) {
+			player = _.findWhere(channel.board.players, {playerId: session.uid});
+		}
 		cb(player, channel);
 	},
 
@@ -72,38 +80,92 @@ Handler.prototype = {
 		});
 	},
 
+	// getOnlinePlayers: function(msg, session, next) {
+	// 	var that = this;
+	// 	if(msg.gameType == "Tournament"){
+	// 		next(null, {
+	// 		onlinePlayer: [ {clubId: 1,
+	// 											player: 10}, 
+	// 										{clubId: 2,
+	// 										  player: 20},  
+	// 										{clubId: 3,
+	// 										  player: 30}, 
+	// 										{clubId: 4,
+	// 										  player: 40}, 
+	// 										{clubId: 5,
+	// 										  player: 50}
+	// 										]
+	// 	  })
+	// 	}else {
+	// 		next(null, {
+	// 		onlinePlayer: [ {clubId: 6,
+	// 											player: 10}, 
+	// 										{clubId: 7,
+	// 										  player: 20},  
+	// 										{clubId: 8,
+	// 										  player: 30}, 
+	// 										{clubId: 9,
+	// 										  player: 40}, 
+	// 										{clubId: 10,
+	// 										  player: 50}
+	// 										]
+	// 	  })
+	// 	};
+	// }
+
+
+
 	getOnlinePlayers: function(msg, session, next) {
-		var that = this;
-		if(msg.gameType == "Tournament"){
-			next(null, {
-			onlinePlayer: [ {clubId: 1,
-												player: 10}, 
-											{clubId: 2,
-											  player: 20},  
-											{clubId: 3,
-											  player: 30}, 
-											{clubId: 4,
-											  player: 40}, 
-											{clubId: 5,
-											  player: 50}
-											]
-		  })
-		}else {
-			next(null, {
-			onlinePlayer: [ {clubId: 6,
-												player: 10}, 
-											{clubId: 7,
-											  player: 20},  
-											{clubId: 8,
-											  player: 30}, 
-											{clubId: 9,
-											  player: 40}, 
-											{clubId: 10,
-											  player: 50}
-											]
-		  })
-		};
-	}
+    var that = this;
+
+
+    that.getPlayerAndChannel(session, function(player, channel) {
+      if (!!channel) {
+        if (msg.gameType == "OneToOne") {
+          channel.board.redis.smembers("onetoone_room_players", function(err, data) {
+            that.getPlayerOnline({data: data, redis: channel.board.redis}, function(onlinePlayer) {
+              next(null, {
+                success: true,
+                onlinePlayer: onlinePlayer
+              })
+            });
+          })
+        }else {
+          channel.board.redis.smembers("tournament_room_players", function(err, data) {
+            that.getPlayerOnline({data: data, redis: channel.board.redis}, function(onlinePlayer) {
+              next(null, {
+                success: true,
+                onlinePlayer: onlinePlayer
+              })
+            })
+          });
+        }
+      } else {
+        next(null, {
+          success: false
+        })
+      }
+    });
+  },
+
+  getPlayerOnline: function(msg, next) {
+    var totalData = 0;
+    var onlinePlayer = [];
+    _.each(msg.data, function(clubId) {
+      msg.redis.get(clubId, function(err, playerCount) {
+        totalData++;
+        onlinePlayer.push({
+          clubId: clubId.split(":")[1],
+          player: !!playerCount ? playerCount : 0
+        });
+        if (totalData == msg.data.length) {
+          next(onlinePlayer);
+        }
+      })
+    });
+  },
 
 
 }
+
+
