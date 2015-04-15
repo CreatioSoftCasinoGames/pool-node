@@ -299,3 +299,5 @@ var onUserLeave = function(app, session) {
 	})
 	// app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
 };
+
+

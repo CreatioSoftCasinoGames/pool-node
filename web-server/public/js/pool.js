@@ -23,7 +23,13 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
   $scope.getOnlinePlayers = function() {
-    window.pomelo.request("pool.poolHandler.getOnlinePlayers", {gameType :"OneToOne"}, function(data) {
+    window.pomelo.request("pool.poolHandler.getOnlinePlayers", {gameType: "OneToOne"}, function(data) {
+      console.log(data)
+    })
+  };
+
+   $scope.updateOnlinePlayers = function() {
+    window.pomelo.request("pool.poolHandler.updateOnlinePlayers", {total_coins_won: 5555 }, function(data) {
       console.log(data)
     })
   };
