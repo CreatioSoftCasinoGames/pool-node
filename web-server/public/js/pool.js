@@ -28,8 +28,8 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
     })
   };
 
-   $scope.updateOnlinePlayers = function() {
-    window.pomelo.request("pool.poolHandler.updateOnlinePlayers", {total_coins_won: 5555 }, function(data) {
+   $scope.updateProfile = function() {
+    window.pomelo.request("pool.poolHandler.updateProfile", {rank: 11 }, function(data) {
       console.log(data)
     })
   };

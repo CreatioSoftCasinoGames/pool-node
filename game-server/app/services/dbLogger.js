@@ -19,13 +19,6 @@ DBLogger.prototype = {
 	  console.log('Game START');
 	  var that = this;
 	  console.log(data);
-    
-    // if 
-	  // case 1
-	  //  data {bp: 67}
-	  // 2
-	  //  da {require 5}
-
 	  that.sidekiq.enqueue("UpdateWorker", JSON.stringify({
 	  	id: data.playerId,
 	    data: data
