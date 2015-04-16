@@ -23,7 +23,6 @@ Board.prototype = {
 		var that = this;
 		var player = new Player(playerId, that.game);
 		that.players.push(player)
-		// console.log(this.players)
 	},
 
 	restartGame: function() {

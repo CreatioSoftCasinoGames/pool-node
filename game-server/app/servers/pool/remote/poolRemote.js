@@ -57,9 +57,17 @@ PoolRemote.prototype = {
 			});
 		});
 
+
 		redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
 		  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
-		  	channel.board = new poolLogic.Board(clubId, redis, that.app);
+
+		  	if (!channel.board){
+		  		channel.board = new poolLogic.Board(clubId, redis, that.app);
+		  		channel.board.addPlayer(uid);
+		  	}else{
+		  		channel.board.addPlayer(uid);
+		  	}
+		  	
 				redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
 					that.getOpponent({clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
 						if(!!responseData){
