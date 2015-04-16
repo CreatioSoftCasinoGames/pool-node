@@ -62,17 +62,14 @@ PoolRemote.prototype = {
 		  	channel.board = new poolLogic.Board(clubId, redis, that.app);
 				redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
 					that.getOpponent({clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
-						console.log('Success opponent - ' + responseData.success );
 						if(!!responseData){
 							if(responseData.success && responseData.message == "Opponent found!") {
 								redis.hmget("game_player:"+responseData.opponentId, "player_ip", playerIp, function(err, opponentIp) {
 									// responseData.opponentIp = opponentIp[0];
 									responseData.clubId = clubId;
-									console.log('IP and Server added')
 									next(responseData)
 								});
 							} else {
-								console.log('This should not be sent!')
 								responseData.clubId = clubId;
 								next(responseData)
 							}
@@ -122,14 +119,10 @@ PoolRemote.prototype = {
 				});
 
 			} else {
-				console.log('3. Now check here !')
 				setTimeout(function(){
 					redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, newPlayerList){
 						newPlayerList = _.without(newPlayerList, msg.playerId); //Remove the current player from list
-						console.log('Updated player list !')
-						console.log(newPlayerList)
 						if(playerList.length > 0 && !opponentFound) {
-							console.log('2. Now check here !')
 							opponentFound = true;
 							//Remove players from redis data, Set status playing, send response
 							redis.zrem("club_id:"+msg.clubId, parseInt(msg.playerLevel), msg.playerId, function(err, data) {
@@ -158,10 +151,7 @@ PoolRemote.prototype = {
 								});
 							});
 						} else {
-							console.log('1. Now check here !')
-							console.log('opponentFound - ' + opponentFound);
 							if(opponentFound){
-								console.log('Now check here !')
 							} else if(!opponentFound) {
 								opponentFound = true;
 								//Remove players from redis data

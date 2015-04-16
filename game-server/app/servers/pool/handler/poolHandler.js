@@ -25,7 +25,6 @@ Handler.prototype = {
 	getClubConfigs: function(msg, session, next) {
 		var that = this;
 		backendFetcher.get("/api/v1/club_configs.json", {club_type: msg.club_type}, that.app, function(data) {
-			console.log(data);
 			next(null, {
 				club_configs: data
 			})
@@ -171,54 +170,58 @@ Handler.prototype = {
 	updateProfile: function(msg, session, next){
 		var that = this
 		if (msg.ball_potted){
-			console.log("ball_potted");
 			dbLogger.updateGame({playerId: session.uid, ball_potted:  msg.ball_potted})
-		}
-		else if (msg.total_coins_won){
-			console.log("total_coins_won");
+		}else if (msg.total_coins_won){
 			dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
-    }
-    else if (msg.accuracy){
-			console.log("accuracy");
+    }else if (msg.accuracy){
 			dbLogger.updateGame({playerId: session.uid, accuracy:  msg.accuracy})
-		}
-		else if (msg.win_percentage){
-			console.log("win_percentage");
+		}else if (msg.win_percentage){
 			dbLogger.updateGame({playerId: session.uid, win_percentage:  msg.win_percentage})
 		}else if (msg.xp){
-			console.log("xp");
 			dbLogger.updateGame({playerId: session.uid, xp:  msg.xp})
 		}else if (msg.total_games_played){
-			console.log("total_games_played");
 			dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
 		}else if (msg.rank){
-			console.log("rank");
 			dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
 		}else if (msg.total_time_in_game){
-			console.log("total_time_in_game");
 			dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
 		}else if (msg.win_streak){
-			console.log("win_streak");
 			dbLogger.updateGame({playerId: session.uid, win_streak:  msg.win_streak})
 		}else if (msg.current_level){
-			console.log("current_level");
 			dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
 		}else if (msg.flag){
-			console.log("flag");
 			dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
 		}else if (msg.country){
-			console.log("country");
 			dbLogger.updateGame({playerId: session.uid, country:  msg.country})
 		}else if(msg.device_avtar_id){
-			console.log("device_avtar_id");
 			dbLogger.updateGame({playerId: session.uid, device_avtar_id:  msg.device_avtar_id})
 		}
 
 		next();
 
-	}
+	},
+
+	chat: function(msg, session, next) {
+		var that = this;
+		that.getPlayerAndChannel(session, function(player, channel) {
+			if(!!channel) {
+				channel.board.redis.hmget("game_player:"+session.uid, "player_name", function(err, playerName) {
+					channel.pushMessage("chatProgress", {
+						playerName: !!playerName[0] ? playerName[0] : "Guest",
+						message: msg.message
+					})
+					next(null, {
+						success: true
+					})	
+				});
+			} else {
+				next(null, {
+					success: false
+				})	
+			}
+		});		
+	},
 
 
 }
-
 

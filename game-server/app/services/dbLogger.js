@@ -18,7 +18,6 @@ DBLogger.prototype = {
 	updateGame: function(data) {
 	  console.log('Game START');
 	  var that = this;
-	  console.log(data);
 	  that.sidekiq.enqueue("UpdateWorker", JSON.stringify({
 	  	id: data.playerId,
 	    data: data
