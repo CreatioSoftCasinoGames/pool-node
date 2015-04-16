@@ -68,10 +68,6 @@ Handler.prototype = {
 		});
 	},
 
-	// sendMessageToUser: function(uid, serverId, msg, route) {
-	// 		this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {
- //      });
-	// 	},
 
 	generalProgress: function(channel, playerId, data) {
 		data = _.omit(data, 'timestamp', '__route__');
@@ -81,40 +77,7 @@ Handler.prototype = {
 		});
 	},
 
-	// getOnlinePlayers: function(msg, session, next) {
-	// 	var that = this;
-	// 	if(msg.gameType == "Tournament"){
-	// 		next(null, {
-	// 		onlinePlayer: [ {clubId: 1,
-	// 											player: 10}, 
-	// 										{clubId: 2,
-	// 										  player: 20},  
-	// 										{clubId: 3,
-	// 										  player: 30}, 
-	// 										{clubId: 4,
-	// 										  player: 40}, 
-	// 										{clubId: 5,
-	// 										  player: 50}
-	// 										]
-	// 	  })
-	// 	}else {
-	// 		next(null, {
-	// 		onlinePlayer: [ {clubId: 6,
-	// 											player: 10}, 
-	// 										{clubId: 7,
-	// 										  player: 20},  
-	// 										{clubId: 8,
-	// 										  player: 30}, 
-	// 										{clubId: 9,
-	// 										  player: 40}, 
-	// 										{clubId: 10,
-	// 										  player: 50}
-	// 										]
-	// 	  })
-	// 	};
-	// }
-
-
+	
 
 	getOnlinePlayers: function(msg, session, next) {
     var that = this;
