@@ -1,0 +1,9 @@
+.clubs.partial.hide
+  table(class="table")
+    tr(ng-repeat="club in clubs")
+      td {{club.id}}
+      td {{club.name}}
+      td {{club.entry_fees}}
+      td {{club.winner_amount}}
+      td
+        a(href="" ng-click="joinClub(club.id)" class="btn btn-primary") Join

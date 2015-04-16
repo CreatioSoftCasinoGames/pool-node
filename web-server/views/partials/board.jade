@@ -1,10 +1,2 @@
-.board.hide.partial
-  .deck {{deck}}
-  h1 Players {{players}}
-  h1 Players To Add {{playersToAdd}}
-  h1 Bingo Left {{totalBingosLeft}}
-  h1 Total Cards {{totalCards}}
-  a(href="" class="btn btn-primary" ng-click="sit()") Sit
-  a(href="" class="btn btn-success" ng-click="punch()") Punch
-  a(href="" class="btn btn-danger" ng-click="standUp()") Stand Up
-  a(href="" class="btn btn-danger" ng-click="chat()") Chat
+.dashboard.partial.hide
+  a(href="" id="join" class="btn btn-primary" ng-click="joinTable()") Join Table

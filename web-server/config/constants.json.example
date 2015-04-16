@@ -1,0 +1,16 @@
+{
+	"development": {
+		"token": "8dddfdb4c825fcbfa1a28e2640c5196f",
+		"backendHost": "192.168.2.16",
+		"backendPort": 3000,
+		"gateHost": "192.168.2.16",
+		"gatePort": 3014
+	},
+	"production": {
+		"token": "628e6bc5fb11663184ad911dfa9a97f4",
+		"backendHost": "pkrapi.com",
+		"backendPort": 80,
+		"gateHost": "bingo-gate.bingoapi.com",
+		"gatePort": 3014
+	}
+}

@@ -1,23 +1,28 @@
-var Bingo = function() {
+var Pool = function() {
 	this.init();
 }
 
-Bingo.prototype = {
+Pool.prototype = {
 
 	init: function() {
 		this.bindNavLinkClick();
 		this.bindLoginClick();
 		this.signUp();
-		this.getRooms();
+		this.getClubConfigs();
+		this.guestLoginClick();
+		this.facebookLoginClick();
 		this.pomelo = window.pomelo;
 		this.host = $("body").data("gate-host");
 		this.port = $("body").data("gate-port");
 		this.user = null;
+
 	},
 
-	getRooms: function() {
-		$(document).on("click", "#get-rooms", function() {
-			alert("Hii")
+	getClubConfigs: function() {
+		var that = this;
+		$(document).on("click", "#get-club_configs", function() {
+			alert("neeraj ")
+			that.showPartial(".club_configs");
 		})
 	},
 
@@ -55,6 +60,7 @@ Bingo.prototype = {
 
 	bindLoginClick: function() {
 		var that = this;
+
 		$("#sign-in-form").on("submit", function() {
 		  pomelo.init({
 		    host: that.host,
@@ -74,6 +80,51 @@ Bingo.prototype = {
 			return false;
 		})
 	},
+
+	guestLoginClick: function() {
+		var that = this;
+		$("#guest-sign-in-form").on("submit", function() {
+		  pomelo.init({
+		    host: that.host,
+		    port: that.port,
+		    log: true
+		  }, function() {
+		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, deviceID: "amrendrapc0123456789", playerName: "amrendra"}, function(data) {
+		      if(data.loginSuccess){
+						pomelo.disconnect();
+						that.user = data.user;
+						that.connectPomelo(data.host, data.port);
+				 	} else {
+				 		console.log("Invalid username or password");
+			    }
+		    });
+		  });
+			return false;
+		})
+	},
+
+	facebookLoginClick: function() {
+		var that = this;
+		$("#facebook-sign-in-form").on("submit", function() {
+		  pomelo.init({
+		    host: that.host,
+		    port: that.port,
+		    log: true
+		  }, function() {
+		    pomelo.request("gate.gateHandler.getConnector", { fb_id: "neeraj1234", fb_friends_list: "[154653546]", playerName: "neeraj"}, function(data) {
+		      if(data.loginSuccess){
+						pomelo.disconnect();
+						that.user = data.user;
+						that.connectPomelo(data.host, data.port);
+				 	} else {
+				 		console.log("Invalid username or password");
+			    }
+		    });
+		  });
+			return false;
+		})
+	},
+
 
 	showPartial: function(partialClass) {
 		$(".partial").addClass("hide");
@@ -101,5 +152,5 @@ Bingo.prototype = {
 }
 
 $(function() {	
-	myBingo = new Bingo();
+	myPool = new Pool();
 })
