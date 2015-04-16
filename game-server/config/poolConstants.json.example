@@ -1,16 +1,16 @@
 {
 	"development": {
-		"token": "0044766c74312007aa4e2d36be3c1753",
+		"token": "9c18ae4f8fa2eaa2e9375f42c1cc9586",
 		"backendHost": "127.0.0.1",
 		"backendPort": 3000,
 		"redisHost": "127.0.0.1",
 		"redisPort": 6379
 	},
 	"production": {
-		"token": "e2b81325befe47292680cfd9f5f7e11e",
-		"backendHost": "poolapi.com",
+		"token": "671a2db11669659367df9653cdd5ccfd",
+		"backendHost": "8poolapi.com",
 		"backendPort": 80,
-		"redisHost": "pool-redis.pkrapi.com",
+		"redisHost": "pool-redis.8poolapi.com",
 		"redisPort": 6379
 	}
 }

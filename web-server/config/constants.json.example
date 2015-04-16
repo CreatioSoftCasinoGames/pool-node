@@ -7,10 +7,10 @@
 		"gatePort": 3014
 	},
 	"production": {
-		"token": "628e6bc5fb11663184ad911dfa9a97f4",
-		"backendHost": "pkrapi.com",
+		"token": "671a2db11669659367df9653cdd5ccfd",
+		"backendHost": "8poolapi.com",
 		"backendPort": 80,
-		"gateHost": "bingo-gate.bingoapi.com",
+		"gateHost": "pool-gate.8poolapi.com",
 		"gatePort": 3014
 	}
 }
