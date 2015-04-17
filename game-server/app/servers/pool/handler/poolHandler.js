@@ -81,8 +81,6 @@ Handler.prototype = {
 
 	getOnlinePlayers: function(msg, session, next) {
     var that = this;
-
-
     that.getPlayerAndChannel(session, function(player, channel) {
       if (!!channel) {
         if (msg.gameType == "OneToOne") {
