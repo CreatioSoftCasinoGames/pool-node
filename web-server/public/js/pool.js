@@ -10,6 +10,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   $scope.joinClub = function(clubConfigId) {
 		window.pomelo.request("connector.entryHandler.joinClub", {clubConfigId: clubConfigId, playerIp: "192.168.2.101"}, function(data) {
       myPool.showPartial(".club");
+      console.log(data);
     });
   };
 
@@ -19,32 +20,38 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
       $scope.$apply(function () {
         $scope.club_configs = data.club_configs;
       });
+      console.log(data);
     });
   };
 
   $scope.getOnlinePlayers = function() {
     window.pomelo.request("pool.poolHandler.getOnlinePlayers", {gameType: "OneToOne"}, function(data) {
+    console.log(data);
     })
   };
 
    $scope.updateProfile = function() {
     window.pomelo.request("pool.poolHandler.updateProfile", {rank: 11 }, function(data) {
+    console.log(data);
     })
   };
 
   $scope.chat = function() {
     window.pomelo.request("pool.poolHandler.chat", {message: "Hello! :) abc1234 "}, function(data) {
+    console.log(data);  
     })
   };
 
   $scope.sit = function() {
     window.pomelo.request("pool.poolHandler.sit", {}, function(data) {
+    console.log(data);
     })
   };
 
   $scope.general = function() {
     // pomelo.request("pool.poolHandler.general", {name: "Amrendra", rank: 10}, function(data) {
     window.pomelo.request("connector.entryHandler.sendMessage", {name: "Amrendra", rank: 10}, function(data) {
+    console.log(data);
     });
   };
 
@@ -52,6 +59,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
 
     window.pomelo.on("generalProgress", function(data) {
       alert("amrendra");
+      console.log(data);
     })
   }
 

@@ -115,4 +115,3 @@ handler.signUp = function(msg, session, next)	{
 	 	}
 	})
 };
-;
