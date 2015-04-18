@@ -26,16 +26,19 @@ Board.prototype = {
 	addPlayer: function(playerId) {
 		var that = this;
 		var player = new Player(playerId, that.game);
-		if(this.club_type == "OneToOne"){
-		  that.players.push(player)
-		  // console.log(player);
-		}else{
-			that.players.push(this.quarter_final)
-			// console.log(this.quarter_final);
-		}
-		  
-		
-		
+		this.playersToAdd.push(player);
+	},
+
+
+	newRound: function(cb) {
+		var that = this,
+				game = that.game,
+				redis = that.redis;
+		that.players = [];
+		game.status = "PROGRESS";
+
+
+
 	},
 
 	restartGame: function() {
@@ -72,8 +75,16 @@ var Game = function(board) {
 	this.board = board;
 };
 
+
 var Player = function(playerId) {
 	this.playerId = playerId;
 };
+
+// pushPlayer: function(playerId, cardsCount) {
+// 		var player = new Player(playerId, cardsCount);
+// 		player.game = this;
+// 		this.board.players.push(player);
+// 		this.board.playersToAdd = _.reject(this.board.playersToAdd, function(player){ return (player.playerId == playerId); });
+//  } 
 
 exports.Board = Board;
