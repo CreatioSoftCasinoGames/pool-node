@@ -64,8 +64,11 @@ PoolRemote.prototype = {
 
 		  	//Create a board here
 		  	if(!channel.board){
-		  		channel.board = new poolLogic.Board(clubId, redis);
-		  		channel.board.addPlayer(uid);
+		  		redis.hgetall("club:"+clubId, function(err, clubData) {
+		  			clubType = clubData.club_type;
+		  			channel.board = new poolLogic.Board(clubId, redis, clubType);
+		  		  channel.board.addPlayer(uid);
+		  		});
 		  	}else{
 		  		channel.board.addPlayer(uid);
 		  	}
@@ -160,8 +163,8 @@ PoolRemote.prototype = {
 													backendFetcher.get("/api/v1/users/"+data[0]+".json", {}, that.app, function(bot_player) {
 														msg.channel.board.addPlayer(bot_player.login_token);
 														 that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, function(data){
-					                       console.log(data);
-					                       next(data)
+					                      console.log(data);
+					                      next(data)
 					                    })
 														
 												  });
@@ -173,8 +176,8 @@ PoolRemote.prototype = {
 												  		redis.sadd("game_players", "game_player:"+bot_player.login_token);
 												  		redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
 												  		that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, function(data){
-					                       console.log(data);
-					                       next(data)
+					                      console.log(data);
+					                      next(data)
 					                    })
 														});
 											  	})

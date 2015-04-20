@@ -129,6 +129,7 @@ Handler.prototype = {
 
 
 	updateProfile: function(msg, session, next){
+		// console.log(msg);
 		var that = this
 		if (msg.ball_potted){
 			dbLogger.updateGame({playerId: session.uid, ball_potted:  msg.ball_potted})
@@ -138,9 +139,12 @@ Handler.prototype = {
 			dbLogger.updateGame({playerId: session.uid, accuracy:  msg.accuracy})
 		}else if (msg.win_percentage){
 			dbLogger.updateGame({playerId: session.uid, win_percentage:  msg.win_percentage})
+		}else if (msg.won_count){
+			dbLogger.updateGame({playerId: session.uid, won_count:  msg.won_count})
 		}else if (msg.xp){
 			dbLogger.updateGame({playerId: session.uid, xp:  msg.xp})
 		}else if (msg.total_games_played){
+			console.log(msg);
 			dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
 		}else if (msg.rank){
 			dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
@@ -182,6 +186,8 @@ Handler.prototype = {
 			}
 		});		
 	},
+
+
 
 
 }

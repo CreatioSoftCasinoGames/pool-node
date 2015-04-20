@@ -1,9 +1,10 @@
 var _ = require('underscore');
 var events = require('events');
 
-var Board = function(clubId, redis) {
+var Board = function(clubId, redis, clubType) {
 	this.clubId 		 	= clubId;
 	this.redis 				= redis;
+	this.clubType    = clubType;
 	this.gamePlayers 	=	[];
 	this.leavePlayers	=	[];
 	this.gameRunning 	= false;
@@ -16,6 +17,7 @@ Board.prototype = {
 	init: function() {
 		this.players = [];
 		this.playersToAdd = [];
+		this.temp = [];
 		this.quarter_final = [];
 		this.semi_final = [];
 		this.final_game = [];
@@ -26,7 +28,21 @@ Board.prototype = {
 	addPlayer: function(playerId) {
 		var that = this;
 		var player = new Player(playerId, that.game);
-		this.playersToAdd.push(player);
+
+		// console.log(this.clubType);
+
+		if (that.clubType == "OneToOne"){
+			that.playersToAdd.push(player);
+			// console.log(this.playersToAdd);
+		} else {
+			that.temp.push(player);
+			if (that.temp.length == 2){
+				that.quarter_final.push(that.temp);
+				that.temp = [];
+			}
+			console.log(that.quarter_final);
+
+		}		
 	},
 
 
@@ -36,9 +52,6 @@ Board.prototype = {
 				redis = that.redis;
 		that.players = [];
 		game.status = "PROGRESS";
-
-
-
 	},
 
 	restartGame: function() {

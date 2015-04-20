@@ -31,7 +31,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
    $scope.updateProfile = function() {
-    window.pomelo.request("pool.poolHandler.updateProfile", {rank: 11 }, function(data) {
+    window.pomelo.request("pool.poolHandler.updateProfile", {won_count: 10}, function(data) {
     console.log(data);
     })
   };
@@ -41,6 +41,16 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
     console.log(data);  
     })
   };
+
+
+  $scope.gameOver = function() {
+
+    window.pomelo.request("pool.poolHandler.gameOver", {}, function(data) {
+      console.log(data);  
+    })
+
+  };
+
 
   $scope.sit = function() {
     window.pomelo.request("pool.poolHandler.sit", {}, function(data) {
@@ -61,6 +71,12 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
       alert("amrendra");
       console.log(data);
     })
+
+    window.pomelo.on("gameOver", function(data) {
+      alert("neeraj");
+      console.log(data);
+    })
   }
 
 }])
+
