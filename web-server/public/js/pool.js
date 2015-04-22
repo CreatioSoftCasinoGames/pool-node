@@ -15,7 +15,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
   $scope.getClubConfigs = function() {
-    window.pomelo.request("pool.poolHandler.getClubConfigs", {club_type: "OneToOne"}, function(data) {
+    window.pomelo.request("pool.poolHandler.getClubConfigs", {club_type: "Tournament"}, function(data) {
       myPool.showPartial(".club_configs");
       $scope.$apply(function () {
         $scope.club_configs = data.club_configs;
@@ -31,7 +31,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
    $scope.updateProfile = function() {
-    window.pomelo.request("pool.poolHandler.updateProfile", { total_coins_won: 800, current_coins_balance: 500.0}, function(data) {
+    window.pomelo.request("pool.poolHandler.updateProfile", { total_coins_won: 800, current_coins_balance: 1500}, function(data) {
     console.log(data);
     // win_streak: 0, total_coins_won: 100, win_percentage: 60, won_count: 5, xp: 0, ball_potted: 10, strike_count: 70
     })
@@ -46,7 +46,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
 
   $scope.gameOver = function() {
 
-    window.pomelo.request("pool.poolHandler.gameOver", {winner: "neeraj" }, function(data) {
+    window.pomelo.request("pool.poolHandler.gameOver", {winner: 55, looser: 67}, function(data) {
       console.log(data);  
     })
 

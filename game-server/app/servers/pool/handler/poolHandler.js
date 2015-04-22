@@ -129,7 +129,6 @@ Handler.prototype = {
 
 
 	updateProfile: function(msg, session, next){
-		console.log(msg);
 		var that = this
 
 		if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
@@ -140,23 +139,24 @@ Handler.prototype = {
                            won_count:  msg.won_count,
                            xp:  msg.xp,
                            current_coins_balance: msg.current_coins_balance 
-			                    })
-		}else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0)) {
+			                   })
+		}else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0) && (msg.accuracy || msg.accuracy == 0)) {
 			dbLogger.updateGame({playerId: session.uid,
 				                   ball_potted:  msg.ball_potted,
-				                   strike_count: msg.strike_count
-			                   	})
+				                   strike_count: msg.strike_count,
+				                   accuracy: msg.accuracy
+			                   })
 
 		}else if ((msg.total_coins_won || msg.total_coins_won == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0)){
-		dbLogger.updateGame({playerId: session.uid,
-			                   total_coins_won:  msg.total_coins_won,
-		                     current_coins_balance:  msg.current_coins_balance
-		                   })	
+		  dbLogger.updateGame({playerId: session.uid,
+			                     total_coins_won:  msg.total_coins_won,
+		                       current_coins_balance:  msg.current_coins_balance
+		                     })	
 
 		}else if(msg.total_coins_won || msg.total_coins_won == 0){
 			dbLogger.updateGame({playerId: session.uid,
 			                     total_coins_won:  msg.total_coins_won
-			                    })
+			                   })
 
 		
 
@@ -209,59 +209,69 @@ Handler.prototype = {
 
 
 	gameOver: function(msg, session, next) {
-		console.log(msg);
-
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
+	    
+			// console.log(channel.board.clubType);
+			// console.log(channel.board.quarter_final);
+			// console.log(channel.board.semi_final);					
 
-					// console.log(channel.board);
+			if(channel.board.clubType == "OneToOne"){
+				// console.log(channel.board.players);
+				channel.board.players = [];
+				// console.log(channel.board.players);
+			}else{
+				// console.log(channel.board.quarter_final);
+				// console.log(msg);
+				// console.log(channel.board.quarter_final.playerId);
 
-			// 	if (msg.gameType == "OneToOne"){
-			// 		console.log(channel.board);
-			// 		console.log(channel.board.players);
-			// 		channel.board.players = [];
-			// 		console.log(channel.board.players);
-
-				// }else{
-
-					// var temp = [];
-					// temp.push({playerId: "123"}, {playerId: "456"})
-					// console.log(temp);
-					// o/p [ { playerId: '123' }, { playerId: '456' } ]
-
-					// var quarter_final = [];
-					// quarter_final.push(temp)
-					// console.log(arr);
-
-
-					// temp.push({playerId: "999"}, {playerId: "777"})
-
-					// console.log(quarter_final)
+				// var filteredPlayerId = _.where(goal, {id: "1"});
+				// console.log(msg.winner);
+				console.log(channel.board.quarter_final[0][1].playerId);
+				msg.winner = channel.board.quarter_final[0][1].playerId
+				console.log(msg.winner);
 
 
-					// var semi_final = [];
-				// 	var 1stwinner = quarter_final[0][0]
-				// 	var 2ndwinner = quarter_final[1][0]
-				// 	1stwinner.push(semi_final)
-				// 	2ndwinner.push(semi_final)
+				_.each(channel.board.quarter_final, function(filteredPlayer) {
+					playerIndex++;
+					msg.winner = channel.board.quarter_final[0][1].playerId
+					// console.log(filteredPlayer);
+					channel.board.semi_final[0].push({playerId: msg.winner});
+					if (playerIndex == 2) {
+						channel.board.semi_final[1].push({playerId: msg.winner});
+					}
+					console.log(channel.board.semi_final);
 
-				// 	if (quarter_final.length == 2){
-				// 		semi_final.push(quarter_final);
-				// 		that.quarter_final = [];
-				// 	}
+				  // _.findWhere(filteredPlayer, {playerId: msg.winner});
+					// console.log("neeraj");
+					// if (filteredPlayer == channel.board.quarter_final[0] || channel.board.quarter_final[1]) {
+					// 	channel.board.semi_final.push(filteredPlayer)
+					// 	console.log(channel.board.semi_final);
+					// }else {
+					// 	channel.board.semi_final.push(filteredPlayer)
+					// 	console.log(channel.board.semi_final);
+					// }
+					// // channel.board.semi_final.push(filteredPlayerValue)
 
-				// 	console.log(semi_final)
+	           // console.log(channel.board.semi_final);
+        });
 
-
+				// if (msg.winner == channel.board.quarter_final.playerId) {};
+				// var winner1 = channel.board.quarter_final[0][0];
+        // var winner2 = channel.board.quarter_final[1][0];
+				// if(channel.board.quarter_final.length == 2){
+					// console.log(channel.board.quarter_final);
+					// console.log(channel.board.quarter_final[0][0]);
+					// channel.board.semi_final.push(winner1, winner2);
+					// console.log(channel.board.semi_final);
+					// channel.board.quarter_final = [];
+					// console.log(channel.board.semi_final);
 				// }
-	         
+			}
+			// console.log(channel.board.semi_final);
+			next()	
 
-					
-			// 	// } else {
-			// 	// 	next(null, {
-			// 	// 		success: false
-			// 	// 	})	
-			// 	// }
+		
 		});		
 	},
 
@@ -319,3 +329,41 @@ Handler.prototype = {
 // console.log(semi_final)
 
 
+			// var temp = [];
+					// temp.push({playerId: "123"}, {playerId: "456"})
+					// console.log(temp);
+					// o/p [ { playerId: '123' }, { playerId: '456' } ]
+
+					// var quarter_final = [];
+					// quarter_final.push(temp)
+					// console.log(arr);
+
+
+					// temp.push({playerId: "999"}, {playerId: "777"})
+
+					// console.log(quarter_final)
+
+
+					// var semi_final = [];
+				// 	var 1stwinner = quarter_final[0][0]
+				// 	var 2ndwinner = quarter_final[1][0]
+				// 	1stwinner.push(semi_final)
+				// 	2ndwinner.push(semi_final)
+
+				// 	if (quarter_final.length == 2){
+				// 		semi_final.push(quarter_final);
+				// 		that.quarter_final = [];
+				// 	}
+
+				// 	console.log(semi_final)
+
+
+				// }
+	         
+
+					
+			// 	// } else {
+			// 	// 	next(null, {
+			// 	// 		success: false
+			// 	// 	})	
+			// 	// }

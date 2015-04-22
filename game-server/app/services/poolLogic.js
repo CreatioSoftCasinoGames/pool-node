@@ -19,7 +19,7 @@ Board.prototype = {
 		this.playersToAdd = [];
 		this.temp = [];
 		this.quarter_final = [];
-		this.semi_final = [];
+		this.semi_final = [ [], [], [], [] ];
 		this.final_game = [];
 
 		this.game = new Game(this);
@@ -29,18 +29,19 @@ Board.prototype = {
 		var that = this;
 		var player = new Player(playerId, that.game);
 
-		// console.log(this.clubType);
+		// console.log(that.clubType);
 
 		if (that.clubType == "OneToOne"){
 			that.playersToAdd.push(player);
 			// console.log(this.playersToAdd);
 		} else {
+			that.players.push(player);
 			that.temp.push(player);
 			if (that.temp.length == 2){
 				that.quarter_final.push(that.temp);
 				that.temp = [];
 			}
-			console.log(that.quarter_final);
+			// console.log(that.quarter_final);
 
 		}		
 	},
