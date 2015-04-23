@@ -212,67 +212,45 @@ Handler.prototype = {
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
 	    
-			// console.log(channel.board.clubType);
 			console.log(channel.board.quarter_final);
-			// console.log(channel.board.semi_final);					
 
 			if(channel.board.clubType == "OneToOne"){
-				// console.log(channel.board.players);
 				channel.board.players = [];
-				// console.log(channel.board.players);
 			}else{
-				// console.log(channel.board.quarter_final);
-				// console.log(msg);
-				// console.log(channel.board.quarter_final.playerId);
 
-				// var filteredPlayerId = _.where(goal, {id: "1"});
-				// console.log(msg.winner);
-				// console.log(channel.board.quarter_final[0][1].playerId);
 				if (channel.board.semi_final[0].length == 0){
-					msg.winner = channel.board.quarter_final[0][0].playerId
+					msg.winner = channel.board.quarter_final[0][0]
 				}else if(channel.board.semi_final[0].length == 1){
-					msg.winner = channel.board.quarter_final[1][0].playerId
+					msg.winner = channel.board.quarter_final[1][0]
 				}else if(channel.board.semi_final[1].length == 0){
-					msg.winner = channel.board.quarter_final[2][0].playerId
+					msg.winner = channel.board.quarter_final[2][0]
 				}else{
-					msg.winner = channel.board.quarter_final[2][1].playerId
+					msg.winner = channel.board.quarter_final[2][1]
 				}
-				// msg.winner = channel.board.quarter_final[0][1].playerId
-				// console.log(msg.winner);
 
-        	// console.log(channel.board.quarter_final);
-					// console.log(channel.board.quarter_final[1]);
 				_.each(channel.board.quarter_final, function(filteredPlayer) {
-					// console.log(filteredPlayer);
-					// filteredPlayer++;
-					// console.log(channel.board.quarter_final[0][0]);
-					// console.log(msg.winner + ' and ' + channel.board.quarter_final[1][0].playerId + ' and ' + channel.board.quarter_final[1][1].playerId)
-
-					if((msg.winner == channel.board.quarter_final[0][0].playerId) || (msg.winner == channel.board.quarter_final[0][1].playerId)) {
-						// console.log(_.where(channel.board.semi_final[0], {playerId: msg.winner}));
-						if (_.where(channel.board.semi_final[0], {playerId: msg.winner}).length < 1) {
-							channel.board.semi_final[0].push({playerId: msg.winner});
+					if(_.indexOf(channel.board.quarter_final[0], msg.winner) >= 0) {
+						console.log('I am here !')
+						if (_.where(channel.board.semi_final[0], {playerId: msg.winner.playerId}).length < 1) {
+							channel.board.semi_final[0].push(msg.winner);
 							console.log("1 one");
 						} 
 						console.log(channel.board.semi_final[0]);
-					}else if ((msg.winner == channel.board.quarter_final[1][0].playerId) || (msg.winner == channel.board.quarter_final[1][1].playerId)) {
-						// console.log(_.where(channel.board.semi_final[0], {playerId: msg.winner}));
-						if (_.where(channel.board.semi_final[0], {playerId: msg.winner}).length < 1) {
-							channel.board.semi_final[0].push({playerId: msg.winner});
+					} else if (_.indexOf(channel.board.quarter_final[1], msg.winner) >= 0) {
+						if (_.where(channel.board.semi_final[0], {playerId: msg.winner.playerId}).length < 1) {
+							channel.board.semi_final[0].push(msg.winner);
 							console.log("1 two");
 						} 
 						console.log(channel.board.semi_final[0]);
-					}else if ((msg.winner == channel.board.quarter_final[2][0].playerId) || (msg.winner == channel.board.quarter_final[2][1].playerId)) {
-						// console.log(_.where(channel.board.semi_final[1], {playerId: msg.winner}));
-						if (_.where(channel.board.semi_final[1], {playerId: msg.winner}).length < 1) {
-							channel.board.semi_final[1].push({playerId: msg.winner});
+					}else if (_.indexOf(channel.board.quarter_final[2], msg.winner) >= 0) {
+						if (_.where(channel.board.semi_final[1], {playerId: msg.winner.playerId}).length < 1) {
+							channel.board.semi_final[1].push(msg.winner);
 							console.log("1 three");
 						} 
         		console.log(channel.board.semi_final[1]);
-					}else if ((msg.winner == channel.board.quarter_final[3][0].playerId) || (msg.winner == channel.board.quarter_final[3][1].playerId)) {
-						// console.log(_.where(channel.board.semi_final[1], {playerId: msg.winner}));
-						if (_.where(channel.board.semi_final[1], {playerId: msg.winner}).length < 1) {
-							channel.board.semi_final[1].push({playerId: msg.winner});
+					}else if (_.indexOf(channel.board.quarter_final[3], msg.winner) >= 0) {
+						if (_.where(channel.board.semi_final[1], {playerId: msg.winner.playerId}).length < 1) {
+							channel.board.semi_final[1].push(msg.winner);
 							console.log("1 four");
 						} 
 						console.log(channel.board.semi_final[1]);
@@ -281,6 +259,11 @@ Handler.prototype = {
 					
         });
 
+
+
+
+
+
 			}
 			next()	
 
@@ -288,8 +271,6 @@ Handler.prototype = {
 		});		
 	},
 
-
-
-
 }
+
 
