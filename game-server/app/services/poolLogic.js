@@ -19,7 +19,7 @@ Board.prototype = {
 		this.playersToAdd = [];
 		this.temp = [];
 		this.quarter_final = [];
-		this.semi_final = [ [], [], [], [] ];
+		this.semi_final = [ [], [] ];
 		this.final_game = [];
 
 		this.game = new Game(this);

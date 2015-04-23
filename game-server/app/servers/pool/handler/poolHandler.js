@@ -213,7 +213,7 @@ Handler.prototype = {
 		that.getPlayerAndChannel(session, function(player, channel) {
 	    
 			// console.log(channel.board.clubType);
-			// console.log(channel.board.quarter_final);
+			console.log(channel.board.quarter_final);
 			// console.log(channel.board.semi_final);					
 
 			if(channel.board.clubType == "OneToOne"){
@@ -227,48 +227,61 @@ Handler.prototype = {
 
 				// var filteredPlayerId = _.where(goal, {id: "1"});
 				// console.log(msg.winner);
-				console.log(channel.board.quarter_final[0][1].playerId);
-				msg.winner = channel.board.quarter_final[0][1].playerId
-				console.log(msg.winner);
+				// console.log(channel.board.quarter_final[0][1].playerId);
+				if (channel.board.semi_final[0].length == 0){
+					msg.winner = channel.board.quarter_final[0][0].playerId
+				}else if(channel.board.semi_final[0].length == 1){
+					msg.winner = channel.board.quarter_final[1][0].playerId
+				}else if(channel.board.semi_final[1].length == 0){
+					msg.winner = channel.board.quarter_final[2][0].playerId
+				}else{
+					msg.winner = channel.board.quarter_final[2][1].playerId
+				}
+				// msg.winner = channel.board.quarter_final[0][1].playerId
+				// console.log(msg.winner);
 
-
+        	// console.log(channel.board.quarter_final);
+					// console.log(channel.board.quarter_final[1]);
 				_.each(channel.board.quarter_final, function(filteredPlayer) {
-					playerIndex++;
-					msg.winner = channel.board.quarter_final[0][1].playerId
 					// console.log(filteredPlayer);
-					channel.board.semi_final[0].push({playerId: msg.winner});
-					if (playerIndex == 2) {
-						channel.board.semi_final[1].push({playerId: msg.winner});
+					// filteredPlayer++;
+					// console.log(channel.board.quarter_final[0][0]);
+					// console.log(msg.winner + ' and ' + channel.board.quarter_final[1][0].playerId + ' and ' + channel.board.quarter_final[1][1].playerId)
+
+					if((msg.winner == channel.board.quarter_final[0][0].playerId) || (msg.winner == channel.board.quarter_final[0][1].playerId)) {
+						// console.log(_.where(channel.board.semi_final[0], {playerId: msg.winner}));
+						if (_.where(channel.board.semi_final[0], {playerId: msg.winner}).length < 1) {
+							channel.board.semi_final[0].push({playerId: msg.winner});
+							console.log("1 one");
+						} 
+						console.log(channel.board.semi_final[0]);
+					}else if ((msg.winner == channel.board.quarter_final[1][0].playerId) || (msg.winner == channel.board.quarter_final[1][1].playerId)) {
+						// console.log(_.where(channel.board.semi_final[0], {playerId: msg.winner}));
+						if (_.where(channel.board.semi_final[0], {playerId: msg.winner}).length < 1) {
+							channel.board.semi_final[0].push({playerId: msg.winner});
+							console.log("1 two");
+						} 
+						console.log(channel.board.semi_final[0]);
+					}else if ((msg.winner == channel.board.quarter_final[2][0].playerId) || (msg.winner == channel.board.quarter_final[2][1].playerId)) {
+						// console.log(_.where(channel.board.semi_final[1], {playerId: msg.winner}));
+						if (_.where(channel.board.semi_final[1], {playerId: msg.winner}).length < 1) {
+							channel.board.semi_final[1].push({playerId: msg.winner});
+							console.log("1 three");
+						} 
+        		console.log(channel.board.semi_final[1]);
+					}else if ((msg.winner == channel.board.quarter_final[3][0].playerId) || (msg.winner == channel.board.quarter_final[3][1].playerId)) {
+						// console.log(_.where(channel.board.semi_final[1], {playerId: msg.winner}));
+						if (_.where(channel.board.semi_final[1], {playerId: msg.winner}).length < 1) {
+							channel.board.semi_final[1].push({playerId: msg.winner});
+							console.log("1 four");
+						} 
+						console.log(channel.board.semi_final[1]);
 					}
 					console.log(channel.board.semi_final);
-
-				  // _.findWhere(filteredPlayer, {playerId: msg.winner});
-					// console.log("neeraj");
-					// if (filteredPlayer == channel.board.quarter_final[0] || channel.board.quarter_final[1]) {
-					// 	channel.board.semi_final.push(filteredPlayer)
-					// 	console.log(channel.board.semi_final);
-					// }else {
-					// 	channel.board.semi_final.push(filteredPlayer)
-					// 	console.log(channel.board.semi_final);
-					// }
-					// // channel.board.semi_final.push(filteredPlayerValue)
-
-	           // console.log(channel.board.semi_final);
+					
         });
 
-				// if (msg.winner == channel.board.quarter_final.playerId) {};
-				// var winner1 = channel.board.quarter_final[0][0];
-        // var winner2 = channel.board.quarter_final[1][0];
-				// if(channel.board.quarter_final.length == 2){
-					// console.log(channel.board.quarter_final);
-					// console.log(channel.board.quarter_final[0][0]);
-					// channel.board.semi_final.push(winner1, winner2);
-					// console.log(channel.board.semi_final);
-					// channel.board.quarter_final = [];
-					// console.log(channel.board.semi_final);
-				// }
 			}
-			// console.log(channel.board.semi_final);
 			next()	
 
 		
@@ -280,90 +293,3 @@ Handler.prototype = {
 
 }
 
-
-
-
-
-// if (msg.ball_potted ){
-			// dbLogger.updateGame({playerId: session.uid, ball_potted:  msg.ball_potted})
-
-			//   }else if (msg.accuracy){
-		// 	dbLogger.updateGame({playerId: session.uid, accuracy:  msg.accuracy})
-		// }else if (msg.win_percentage){
-		// 	dbLogger.updateGame({playerId: session.uid, win_percentage:  msg.win_percentage})
-		// }else if (msg.won_count){
-		// 	dbLogger.updateGame({playerId: session.uid, won_count:  msg.won_count})
-		// }else if (msg.xp){
-		// 	dbLogger.updateGame({playerId: session.uid, xp:  msg.xp})
-
-		// }else if (msg.win_streak){
-		// 	dbLogger.updateGame({playerId: session.uid, win_streak:  msg.win_streak})
-
-
-
-
-
-
-
-// var temp = [];
-// temp.push({playerId: "123"}, {playerId: "456"})
-// console.log(temp);
-// o/p [ { playerId: '123' }, { playerId: '456' } ]
-
-// var quarter_final = [];
-// quarter_final.push(temp)
-// console.log(arr);
-
-
-// temp.push({playerId: "999"}, {playerId: "777"})
-
-// console.log(quarter_final)
-
-
-// var semi_final = [];
-// var 1stwinner = quarter_final[0][0]
-// var 2ndwinner = quarter_final[1][0]
-// 1stwinner.push(semi_final)
-// 2ndwinner.push(semi_final)
-
-// console.log(semi_final)
-
-
-			// var temp = [];
-					// temp.push({playerId: "123"}, {playerId: "456"})
-					// console.log(temp);
-					// o/p [ { playerId: '123' }, { playerId: '456' } ]
-
-					// var quarter_final = [];
-					// quarter_final.push(temp)
-					// console.log(arr);
-
-
-					// temp.push({playerId: "999"}, {playerId: "777"})
-
-					// console.log(quarter_final)
-
-
-					// var semi_final = [];
-				// 	var 1stwinner = quarter_final[0][0]
-				// 	var 2ndwinner = quarter_final[1][0]
-				// 	1stwinner.push(semi_final)
-				// 	2ndwinner.push(semi_final)
-
-				// 	if (quarter_final.length == 2){
-				// 		semi_final.push(quarter_final);
-				// 		that.quarter_final = [];
-				// 	}
-
-				// 	console.log(semi_final)
-
-
-				// }
-	         
-
-					
-			// 	// } else {
-			// 	// 	next(null, {
-			// 	// 		success: false
-			// 	// 	})	
-			// 	// }

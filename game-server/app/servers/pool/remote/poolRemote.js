@@ -48,6 +48,7 @@ PoolRemote.prototype = {
 		var that = this;
 		var redis = that.app.get("redis");
 		var channel = that.channelService.getChannel(clubId, flag);
+		channel.add(uid, sid);
      
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {

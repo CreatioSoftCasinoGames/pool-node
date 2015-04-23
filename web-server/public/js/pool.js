@@ -73,11 +73,18 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
       console.log(data);
     })
 
+    window.pomelo.on("chatProgress", function(data) {
+      alert(data);
+      console.log(data);
+    })
+
     window.pomelo.on("gameOver", function(data) {
       alert("neeraj");
       console.log(data);
     })
-  }
+  };
+
+  listenCallbacks();
 
 }])
 
