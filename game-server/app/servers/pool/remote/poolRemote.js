@@ -48,6 +48,7 @@ PoolRemote.prototype = {
 		var that = this;
 		var redis = that.app.get("redis");
 		var channel = that.channelService.getChannel(clubId, flag);
+		console.log(uid + ' and ' + sid);
 		channel.add(uid, sid);
      
 		//Calculate online players
@@ -62,6 +63,7 @@ PoolRemote.prototype = {
 
 		redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
 		  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
+		  	// that.addEventListers(channel);
 
 		  	//Create a board here
 		  	if(!channel.board){
@@ -69,13 +71,18 @@ PoolRemote.prototype = {
 		  			clubType = clubData.club_type;
 		  			channel.board = new poolLogic.Board(clubId, redis, clubType);
 		  		  channel.board.addPlayer(uid);
+		  		  // that.addEventListers(channel);
 		  		});
 		  	}else{
 		  		channel.board.addPlayer(uid);
+		  		// that.addEventListers(channel);
 		  	}
 		  	
 		  	//Get opponenet
+		  	console.log(playerDetails);
 				redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
+					console.log(err);
+					console.log(data);
 					that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
 						if(!!responseData){
 							if(responseData.success && responseData.message == "Opponent found!") {
@@ -106,6 +113,7 @@ PoolRemote.prototype = {
 		var opponentFound = false;
 
 		redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
+			console.log(err);
 			console.log(playerList);
 			playerList = _.without(playerList, msg.playerId); //Remove the current player from list
 			if(playerList.length > 0 && !opponentFound) {
@@ -236,10 +244,21 @@ PoolRemote.prototype = {
 	},
 
 	addEventListers: function(channel) {
-		var that = this;
-		var board = channel.board;
-		var redis = that.app.get('redis');
+		var that = this,
+				board = channel.board,
+				redis = that.app.get('redis');
+    console.log("Hi I am here");
+    // console.log(board);
+    // console.log(channel.board);
+		board.eventEmitter.on("addPlayer", function() {
+			channel.pushMessage("addPlayer", {
+				quarterFinal: channel.board.quarterFinal,
+				semiFinal: channel.board.semiFinal,
+				finalGame: channel.board.finalGame
+			})
+		});
 	}
+
 
 }
 

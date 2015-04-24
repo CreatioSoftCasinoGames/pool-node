@@ -46,7 +46,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
 
   $scope.gameOver = function() {
 
-    window.pomelo.request("pool.poolHandler.gameOver", {winner: 55, looser: 67}, function(data) {
+    window.pomelo.request("pool.poolHandler.gameOver", {winner: 55}, function(data) {
       console.log(data);  
     })
 

@@ -18,9 +18,9 @@ Board.prototype = {
 		this.players = [];
 		this.playersToAdd = [];
 		this.temp = [];
-		this.quarter_final = [];
-		this.semi_final = [ [], [] ];
-		this.final_game = [];
+		this.quarterFinal = [];
+		this.semiFinal = [ [], [] ];
+		this.finalGame = [];
 
 		this.game = new Game(this);
 	},
@@ -38,10 +38,12 @@ Board.prototype = {
 			that.players.push(player);
 			that.temp.push(player);
 			if (that.temp.length == 2){
-				that.quarter_final.push(that.temp);
+				that.quarterFinal.push(that.temp);
 				that.temp = [];
 			}
-			// console.log(that.quarter_final);
+			// console.log(that.quarterFinal);
+			console.log("where are you ");
+			// that.eventEmitter.emit("addPlayer");
 
 		}		
 	},

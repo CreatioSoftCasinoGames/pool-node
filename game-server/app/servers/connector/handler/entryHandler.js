@@ -68,19 +68,20 @@ Handler.prototype.enter= function(msg, session, next) {
 		return;
 	}
 	session.bind(msg.login_token);
+	
 	redis.hmset("game_player:"+msg.login_token, "player_server_id", that.app.get('serverId'), "session_id", session.id);
 	session.on('closed', onUserLeave.bind(null, that.app));
 	next(null, {
 		code: 502,
-		uid: msg.login_token,
 		message: "User is ready to enter"
-	})
+	});
 };
 
 
 Handler.prototype.joinClub=function(msg, session, next) {
   var that = this;
   var board = null;
+  console.log('Sesssion - ' + session.uid);
   that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
     session.set("clubConfigId", msg.clubConfigId);
     session.set("clubId", data.clubId);
