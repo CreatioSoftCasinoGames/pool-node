@@ -25,7 +25,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
   $scope.getOnlinePlayers = function() {
-    window.pomelo.request("pool.poolHandler.getOnlinePlayers", {gameType: "OneToOne"}, function(data) {
+    window.pomelo.request("pool.poolHandler.getOnlinePlayers", {gameType: "Tournament"}, function(data) {
     console.log(data);
     })
   };

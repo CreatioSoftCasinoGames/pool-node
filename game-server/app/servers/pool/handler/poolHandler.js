@@ -225,7 +225,7 @@ Handler.prototype = {
 
 				_.each(channel.board.quarterFinal, function(filteredPlayer) {
 					if(_.indexOf(channel.board.quarterFinal[0], msg.winner) >= 0) {
-						console.log('I am here !')
+						// console.log('I am here !')
 						if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
 							channel.board.semiFinal[0].push(msg.winner);
 							// console.log("1 one");
@@ -275,7 +275,7 @@ Handler.prototype = {
 							channel.board.finalGame.push(msg.winner);
 							// console.log("11 one");
 						} 
-						console.log(channel.board.finalGame);
+						// console.log(channel.board.finalGame);
 					} else if (_.indexOf(channel.board.semiFinal[1], msg.winner) >= 0) {
 						// console.log("I am in semi final 2");
 						if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {

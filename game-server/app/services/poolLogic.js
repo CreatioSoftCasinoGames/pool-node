@@ -42,7 +42,7 @@ Board.prototype = {
 				that.temp = [];
 			}
 			// console.log(that.quarterFinal);
-			console.log("where are you ");
+			// console.log("where are you ");
 			// that.eventEmitter.emit("addPlayer");
 
 		}		

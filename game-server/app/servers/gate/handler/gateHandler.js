@@ -21,16 +21,16 @@ handler.getConnector = function(msg, session, next) {
 	if (msg.is_guest && !!msg.loginType) {
 	  if (msg.loginType == "registration") {
 	    var createNewUser = Math.random().toString(36).slice(2) + Math.random().toString(16).slice(2);
-	    console.log(createNewUser);
+	    // console.log(createNewUser);
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: createNewUser, first_name: msg.playerName }, self.app, function(user) {
-	      console.log(user);
+	      // console.log(user);
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis }, function(data) {
 	        next(null, data);
 	      })
 	    })
     } else {
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.device_id, first_name: msg.playerName }, self.app, function(user) {
-	      console.log(user);
+	      // console.log(user);
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis }, function(data) {
 	        next(null, data);
 	      })

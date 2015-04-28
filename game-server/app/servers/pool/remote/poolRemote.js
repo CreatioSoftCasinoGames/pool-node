@@ -48,16 +48,23 @@ PoolRemote.prototype = {
 		var that = this;
 		var redis = that.app.get("redis");
 		var channel = that.channelService.getChannel(clubId, flag);
-		console.log(uid + ' and ' + sid);
-		channel.add(uid, sid);
+		// console.log(uid + ' and ' + sid);
+		// channel.add(uid, sid);
      
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
 			redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+				console.log(data1);
 				var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+				console.log("online player neeraj");
+				console.log(onlinePlayers);
 		    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
+		    	console.log(onlinePlayers);
+		    	console.log(data);
 			  });
 			});
+					// console.log(onlinePlayers);
+
 		});
 
 
@@ -79,12 +86,30 @@ PoolRemote.prototype = {
 		  	}
 		  	
 		  	//Get opponenet
-		  	console.log(playerDetails);
+		  	// console.log(playerDetails);
 				redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
-					console.log(err);
-					console.log(data);
+					// console.log(err);
+					// console.log(data);
 					that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
-						if(!!responseData){
+						// console.log(responseData);
+						if(!!responseData ){
+							if (responseData.isDummy == true){
+								redis.hgetall("club:"+clubId, function(err, clubData) {
+									// console.log(clubData);
+									redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+										// console.log(data1);
+										var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+										// console.log("online player kumar");
+								    // console.log(onlinePlayers);
+								    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
+								    	// console.log(onlinePlayers);
+								      // console.log(data);
+									  });
+									});
+								});
+							}
+							
+
 							if(responseData.success && responseData.message == "Opponent found!") {
 								responseData.clubId = clubId;
 								next(responseData);
@@ -113,8 +138,8 @@ PoolRemote.prototype = {
 		var opponentFound = false;
 
 		redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
-			console.log(err);
-			console.log(playerList);
+			// console.log(err);
+			// console.log(playerList);
 			playerList = _.without(playerList, msg.playerId); //Remove the current player from list
 			if(playerList.length > 0 && !opponentFound) {
 				opponentFound = true;
@@ -126,8 +151,8 @@ PoolRemote.prototype = {
 								redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 									redis.hgetall("game_player:"+playerList[0], function(err, player) {
                     that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, function(data){
-                       console.log(data);
-                       console.log('1');
+                       // console.log(data);
+                       // console.log('1');
                        next(data)
                     })
 									});
@@ -151,8 +176,8 @@ PoolRemote.prototype = {
 											redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 												redis.hgetall("game_player:"+playerList[0], function(err, player) {
 													that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, function(data){
-		                        console.log(data);
-		                        console.log('2');
+		                        // console.log(data);
+		                        // console.log('2');
 		                        next(data)
 		                      })
 												});
@@ -174,12 +199,12 @@ PoolRemote.prototype = {
 													backendFetcher.get("/api/v1/users/"+data[0]+".json", {}, that.app, function(bot_player) {
 														msg.channel.board.addPlayer(bot_player.login_token);
 														 that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, function(data){
-					                      console.log(data);
-					                      console.log('3');
+					                      // console.log(data);
+					                      // console.log('3');
 					                      next(data)
 					                    })
-														
-												  });
+												  });												  
+													
 											  } else {
 											  	msg.channel.board.getBotPlayerName("first_name", function(name){
 											  		backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: name}, that.app, function(bot_player) {
