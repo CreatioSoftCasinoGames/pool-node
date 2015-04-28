@@ -54,13 +54,13 @@ PoolRemote.prototype = {
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
 			redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
-				console.log(data1);
+				// console.log(data1);
 				var onlinePlayers = !!data1 ? parseInt(data1) : 0;
-				console.log("online player neeraj");
-				console.log(onlinePlayers);
+				// console.log("online player neeraj");
+				// console.log(onlinePlayers);
 		    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
-		    	console.log(onlinePlayers);
-		    	console.log(data);
+		    	// console.log(onlinePlayers);
+		    	// console.log(data);
 			  });
 			});
 					// console.log(onlinePlayers);
