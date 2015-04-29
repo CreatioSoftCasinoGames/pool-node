@@ -203,9 +203,19 @@ Handler.prototype = {
 
 	gameOver: function(msg, session, next) {
 		var that = this;
+		var redis = that.app.get("redis");
 		that.getPlayerAndChannel(session, function(player, channel) {
+			var clubId = channel.board.clubId;
 	    
-			// console.log(channel.board.quarterFinal);
+      redis.hgetall("club:"+clubId, function(err, clubData) {
+				redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+					var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+			    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers-2, function(err, data){
+				  });
+				});
+
+			});
+
 
 			if(channel.board.clubType == "OneToOne"){
 				channel.board.players = [];
@@ -213,15 +223,15 @@ Handler.prototype = {
 				next()
 			} else {
 
-				if (channel.board.semiFinal[0].length == 0){
-					msg.winner = channel.board.quarterFinal[0][0]
-				} else if(channel.board.semiFinal[0].length == 1){
-					msg.winner = channel.board.quarterFinal[1][0]
-				} else if(channel.board.semiFinal[1].length == 0){
-					msg.winner = channel.board.quarterFinal[2][0]
-				} else{
-					msg.winner = channel.board.quarterFinal[2][1]
-				}
+				// if (channel.board.semiFinal[0].length == 0){
+				// 	msg.winner = channel.board.quarterFinal[0][0]
+				// } else if(channel.board.semiFinal[0].length == 1){
+				// 	msg.winner = channel.board.quarterFinal[1][0]
+				// } else if(channel.board.semiFinal[1].length == 0){
+				// 	msg.winner = channel.board.quarterFinal[2][0]
+				// } else{
+				// 	msg.winner = channel.board.quarterFinal[2][1]
+				// }
 
 				_.each(channel.board.quarterFinal, function(filteredPlayer) {
 					if(_.indexOf(channel.board.quarterFinal[0], msg.winner) >= 0) {
