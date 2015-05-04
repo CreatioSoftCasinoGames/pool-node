@@ -133,9 +133,16 @@ PoolRemote.prototype = {
 
 
   getOpponent: function(msg, next) {
-		var that = this;
-		var redis = that.app.get("redis");
-		var opponentFound = false;
+  	console.log(msg);
+  	console.log(msg.channel.board.clubType);
+  	console.log(msg.channel.board.quarterFinal);
+		var that = this,
+		  redis = that.app.get("redis"),
+		  opponentFound = false,
+		  quarterFinal = msg.channel.board.quarterFinal,
+		  clubType = msg.channel.board.clubType;
+
+		// console.log(quarterFinal.length);
 
 		redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
 			// console.log(err);
@@ -143,6 +150,7 @@ PoolRemote.prototype = {
 			playerList = _.without(playerList, msg.playerId); //Remove the current player from list
 			if(playerList.length > 0 && !opponentFound) {
 				opponentFound = true;
+
 				//Remove players from redis data, Set status playing, send response
 				redis.zrem("club_id:"+msg.clubId, parseInt(msg.playerLevel), msg.playerId, function(err, data) {
 					redis.hmget("game_player:"+playerList[0], "player_level", function(err, playerLevel) {
@@ -163,11 +171,18 @@ PoolRemote.prototype = {
 				});
 
 			} else {
+
+				// if (clubType == "Tournament" && quarterFinal.length >= 1) {
+
+
+				// }
+
 				setTimeout(function(){
 					redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, newPlayerList){
 						newPlayerList = _.without(newPlayerList, msg.playerId); //Remove the current player from list
 						if(playerList.length > 0 && !opponentFound) {
 							opponentFound = true;
+		
 							//Remove players from redis data, Set status playing, send response
 							redis.zrem("club_id:"+msg.clubId, parseInt(msg.playerLevel), msg.playerId, function(err, data) {
 								redis.hmget("game_player:"+playerList[0], "player_level", function(err, playerLevel) {

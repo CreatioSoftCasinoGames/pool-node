@@ -267,8 +267,8 @@ Handler.prototype = {
 				// console.log(channel.board.semiFinal[0][0]);
 				// console.log(channel.board.semiFinal[1][0]);
 
-				channel.board.semiFinal[0] = [ { playerId: 'd3df434935' }, { playerId: 'f897618636' } ]
-				channel.board.semiFinal[1] = [ { playerId: '41a4a08b51' }, { playerId: '78f7fa7fed' } ]
+				// channel.board.semiFinal[0] = [ { playerId: 'd3df434935' }, { playerId: 'f897618636' } ]
+				// channel.board.semiFinal[1] = [ { playerId: '41a4a08b51' }, { playerId: '78f7fa7fed' } ]
 
 
         
