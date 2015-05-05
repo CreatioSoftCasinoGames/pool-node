@@ -91,7 +91,7 @@ PoolRemote.prototype = {
 					// console.log(err);
 					// console.log(data);
 					that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
-						// console.log(responseData);
+						console.log(responseData);
 						if(!!responseData ){
 							if (responseData.isDummy == true){
 								redis.hgetall("club:"+clubId, function(err, clubData) {
@@ -133,9 +133,9 @@ PoolRemote.prototype = {
 
 
   getOpponent: function(msg, next) {
-  	console.log(msg);
-  	console.log(msg.channel.board.clubType);
-  	console.log(msg.channel.board.quarterFinal);
+  	// console.log(msg);
+  	// console.log(msg.channel.board.clubType);
+  	// console.log(msg.channel.board.quarterFinal);
 		var that = this,
 		  redis = that.app.get("redis"),
 		  opponentFound = false,
@@ -158,7 +158,7 @@ PoolRemote.prototype = {
 							redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 								redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 									redis.hgetall("game_player:"+playerList[0], function(err, player) {
-                    that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, function(data){
+                    that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, player.device_avatar_id, function(data){
                        // console.log(data);
                        // console.log('1');
                        next(data)
@@ -171,12 +171,7 @@ PoolRemote.prototype = {
 				});
 
 			} else {
-
-				// if (clubType == "Tournament" && quarterFinal.length >= 1) {
-
-
-				// }
-
+				
 				setTimeout(function(){
 					redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, newPlayerList){
 						newPlayerList = _.without(newPlayerList, msg.playerId); //Remove the current player from list
@@ -190,7 +185,7 @@ PoolRemote.prototype = {
 										redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 											redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 												redis.hgetall("game_player:"+playerList[0], function(err, player) {
-													that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, function(data){
+													that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, player.device_avatar_id, function(data){
 		                        // console.log(data);
 		                        // console.log('2');
 		                        next(data)
@@ -213,7 +208,7 @@ PoolRemote.prototype = {
 												if(data.length > 0){
 													backendFetcher.get("/api/v1/users/"+data[0]+".json", {}, that.app, function(bot_player) {
 														msg.channel.board.addPlayer(bot_player.login_token);
-														 that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, function(data){
+														 that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
 					                      // console.log(data);
 					                      // console.log('3');
 					                      next(data)
@@ -227,9 +222,9 @@ PoolRemote.prototype = {
 												  		redis.sadd("available_bots", bot_player.login_token)
 												  		redis.sadd("game_players", "game_player:"+bot_player.login_token);
 												  		redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
-												  		that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, function(data){
-					                      console.log(data);
-					                      console.log('4');
+												  		that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
+					                      // console.log(data);
+					                      // console.log('4');
 					                      next(data)
 					                    })
 														});
@@ -240,9 +235,9 @@ PoolRemote.prototype = {
 										} else {
 											redis.hgetall("game_player:"+msg.playerId, function(err, playerDetails) {
 												redis.hgetall("game_player:"+playerDetails.opponentId, function(err, opponentDetails) {
-													that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  opponentDetails.player_ip, false, false, function(data){
-			                      console.log(data);
-			                      console.log('5');
+													that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  opponentDetails.player_ip, false, false, opponentDetails.device_avatar_id, function(data){
+			                      // console.log(data);
+			                      // console.log('5');
 			                      next(data)
 					                })													
 												})	
@@ -260,7 +255,7 @@ PoolRemote.prototype = {
   },
 
 
-  returnData: function(id, opid, opname, opxp, oplevel, opimage, opip, isdummy, isserver, next ){
+  returnData: function(id, opid, opname, opxp, oplevel, opimage, opip, isdummy, isserver, device_avatar_id, next ){
 		next({
 			message: !isdummy ? "Opponent found!" : "Bot player added !",
 			success: true,
@@ -272,7 +267,8 @@ PoolRemote.prototype = {
 			opponentImage: opimage,
 			opponentIp: opip,
 			isDummy: isdummy,
-			isServer: isserver
+			isServer: isserver,
+			deviceAvatarId: device_avatar_id
 		})	
   },
 

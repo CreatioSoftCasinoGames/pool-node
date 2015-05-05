@@ -31,7 +31,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
    $scope.updateProfile = function() {
-    window.pomelo.request("pool.poolHandler.updateProfile", { total_coins_won: 800, current_coins_balance: 1500}, function(data) {
+    window.pomelo.request("pool.poolHandler.updateProfile", { device_avatar_id: 7 }, function(data) {
     console.log(data);
     // win_streak: 0, total_coins_won: 100, win_percentage: 60, won_count: 5, xp: 0, ball_potted: 10, strike_count: 70
     })

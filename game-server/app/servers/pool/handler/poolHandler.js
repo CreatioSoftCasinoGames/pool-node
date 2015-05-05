@@ -122,7 +122,8 @@ Handler.prototype = {
 
 
 	updateProfile: function(msg, session, next){
-		var that = this
+		var that = this;
+		// console.log(msg);
 
 		if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
 			dbLogger.updateGame({playerId: session.uid,
@@ -152,25 +153,33 @@ Handler.prototype = {
 			                   })
 
 		
+    }else if(msg.device_avatar_id){
+			dbLogger.updateGame({playerId: session.uid, device_avatar_id:  msg.device_avatar_id})
 
 		}else if (msg.total_coins_won){
 			dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
+
 		}else if (msg.current_coins_balance){
 			dbLogger.updateGame({playerId: session.uid, current_coins_balance:  msg.current_coins_balance})	
+
 		}else if (msg.total_games_played){
 			dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
+
 		}else if (msg.rank){
 			dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
+
 		}else if (msg.total_time_in_game){
 			dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
+
 		}else if (msg.current_level){
 			dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
+
 		}else if (msg.flag){
 			dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
+			
 		}else if (msg.country){
 			dbLogger.updateGame({playerId: session.uid, country:  msg.country})
-		}else if(msg.device_avtar_id){
-			dbLogger.updateGame({playerId: session.uid, device_avtar_id:  msg.device_avtar_id})
+		
 		}
 
 		next();
