@@ -48,87 +48,165 @@ PoolRemote.prototype = {
 		var that = this;
 		var redis = that.app.get("redis");
 		var channel = that.channelService.getChannel(clubId, flag);
-		// console.log(uid + ' and ' + sid);
-		// channel.add(uid, sid);
-     
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
 			redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
-				// console.log(data1);
 				var onlinePlayers = !!data1 ? parseInt(data1) : 0;
-				// console.log("online player neeraj");
-				// console.log(onlinePlayers);
 		    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
-		    	// console.log(onlinePlayers);
-		    	// console.log(data);
 			  });
 			});
-					// console.log(onlinePlayers);
-
-		});
+		
 
 
-		redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
-		  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
-		  	// that.addEventListers(channel);
+			redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
+			  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
+			  	// that.addEventListers(channel);
 
-		  	//Create a board here
-		  	if(!channel.board){
-		  		redis.hgetall("club:"+clubId, function(err, clubData) {
-		  			clubType = clubData.club_type;
-		  			channel.board = new poolLogic.Board(clubId, redis, clubType);
-		  		  channel.board.addPlayer(uid);
-		  		  // that.addEventListers(channel);
-		  		});
-		  	}else{
-		  		channel.board.addPlayer(uid);
-		  		// that.addEventListers(channel);
-		  	}
-		  	
-		  	//Get opponenet
-		  	// console.log(playerDetails);
-				redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
-					// console.log(err);
-					// console.log(data);
-					that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
-						console.log(responseData);
-						if(!!responseData ){
-							if (responseData.isDummy == true){
-								redis.hgetall("club:"+clubId, function(err, clubData) {
-									// console.log(clubData);
-									redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
-										// console.log(data1);
-										var onlinePlayers = !!data1 ? parseInt(data1) : 0;
-										// console.log("online player kumar");
-								    // console.log(onlinePlayers);
-								    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
-								    	// console.log(onlinePlayers);
-								      // console.log(data);
-									  });
+			  	//Create a board here
+			  	if(!channel.board){
+			  			clubType = clubData.club_type;
+			  			channel.board = new poolLogic.Board(clubId, redis, clubType);
+			  		  that.addEventListers(channel);
+			  		  channel.board.addPlayer(uid);
+			  	}else{
+			  		channel.board.addPlayer(uid);
+			  		// that.addEventListers(channel);
+			  	}
+			  	
+			  	//Get opponenet
+			  	// console.log(playerDetails);
+					redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
+						that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
+							if(!!responseData ){
+								setTimeout(function(){
+										var botTimer = setInterval(function(){
+											redis.smembers("available_bots", function(err, data){
+												if(!!data && data.length > 0) {
+													// console.log(data);
+													if(channel.board.quarterFinal.length == 4 ) {
+														if (channel.board.quarterFinal[3].length >= 2){
+															console.log('List is full now !');
+															clearInterval(botTimer)
+														}
+														
+													} else {
+														redis.sadd("busy_bots", data[0],  function(err, added){
+															redis.srem("available_bots", data[0], function(err, removed){
+																channel.board.addPlayer(data[0]);
+															});
+														});
+														
+													}
+												} else {
+													console.log('No bots found, create one !')
+													if(channel.board.quarterFinal.length == 4 ) {
+														if (channel.board.quarterFinal[3].length >= 2){
+															console.log('List is full now !');
+															clearInterval(botTimer)
+														}
+														
+													} else {
+														backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: "Guest User"}, that.app, function(bot_player) {
+															console.log(bot_player);
+													  	// msg.channel.board.addPlayer(bot_player.login_token);
+													  	channel.board.addPlayer(bot_player.login_token);
+													  	// setTimeout(function(){
+													  	// 	var gameOverTimer = setInterval(function(){
+														  // 		for (var i = 1; i < channel.board.quarterFinal.length ; i++) {
+														  // 			if (channel.board.quarterFinal[i][1] == channel.board.quarterFinal[i][1]) {
+
+														  // 			}										
+														  // 	  }
+														  // 	},3000);
+													  	// },3000);
+													  });
+													}
+												}
+												
+											});
+										},1000);
+								},1000) 
+
+								if (responseData.isDummy == true){
+									redis.sadd("busy_bots", responseData.opponentId,  function(err, data){
+										redis.srem("available_bots", responseData.opponentId, function(err, data){
+										});
 									});
-								});
-							}
-							
+									
+									redis.hgetall("club:"+clubId, function(err, clubData) {
+										// console.log(clubData);
+										redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+											// console.log(data1);
+											var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+											// console.log("online player kumar");
+									    // console.log(onlinePlayers);
+									    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
+									    	// console.log(onlinePlayers);
+									      // console.log(data);
+										  });
+										});
+									});
+								}
+								
 
-							if(responseData.success && responseData.message == "Opponent found!") {
-								responseData.clubId = clubId;
-								next(responseData);
-							} else {
-								responseData.clubId = clubId;
-								next(responseData);
+								if(responseData.success && responseData.message == "Opponent found!") {
+									responseData.clubId = clubId;
+									next(responseData);
+								} else {
+									responseData.clubId = clubId;
+									next(responseData);
+								}
+								//Add all waiting players into players
+								_.each(channel.board.playersToAdd, function(player) {
+					      	channel.board.players.push(player);
+					      });	
 							}
-							//Add all waiting players into players
-							_.each(channel.board.playersToAdd, function(player) {
-				      	channel.board.players.push(player);
-				      });	
-						}
+						});
 					});
 				});
-			});
-	  });
+		  });
+	});
 	},
 
 
+	addEventListers: function(channel) {
+		var that = this,
+				board = channel.board,
+				redis = that.app.get('redis');
+    console.log("Hi I am here");
+    // console.log(board);
+    // console.log(channel.board);
+    // console.log(board);
+		board.eventEmitter.on("addPlayer", function() {
+
+			console.log('Send broadcast!');
+			// that.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [opponentId, msg, "generalProgress"]}, function(data) {
+   //  	});
+   //  	
+   //  	sendMessageToUser
+    	_.each(board.players, function(player) {
+    		redis.hgetall("game_player:"+player.playerId, function(err, data) {
+    			if(!!data && !!data.player_server_id) {
+    				sid = data.player_server_id;
+    				msg = {};
+    				msg.quarterFinal = board.quarterFinal,
+						msg.semiFinal = board.semiFinal,
+						msg.finalGame = board.finalGame
+    				that.sendMessageToUser(player.playerId, sid, msg);
+    			}
+    		})
+    		// sid = player_server_id
+    		
+    	})
+   //  	that.sendMessageToUser(uid, sid);
+			// channel.pushMessage("addPlayerss", {
+			// 	quarterFinal: board.quarterFinal,
+			// 	semiFinal: board.semiFinal,
+			// 	finalGame: board.finalGame
+			// });
+
+		});
+	},
 	
 
 
@@ -158,7 +236,7 @@ PoolRemote.prototype = {
 							redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 								redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 									redis.hgetall("game_player:"+playerList[0], function(err, player) {
-                    that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, player.device_avatar_id, function(data){
+                    that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
                        // console.log(data);
                        // console.log('1');
                        next(data)
@@ -171,7 +249,7 @@ PoolRemote.prototype = {
 				});
 
 			} else {
-				
+
 				setTimeout(function(){
 					redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, newPlayerList){
 						newPlayerList = _.without(newPlayerList, msg.playerId); //Remove the current player from list
@@ -185,7 +263,7 @@ PoolRemote.prototype = {
 										redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 											redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 												redis.hgetall("game_player:"+playerList[0], function(err, player) {
-													that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, player.device_avatar_id, function(data){
+													that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
 		                        // console.log(data);
 		                        // console.log('2');
 		                        next(data)
@@ -222,7 +300,7 @@ PoolRemote.prototype = {
 												  		redis.sadd("available_bots", bot_player.login_token)
 												  		redis.sadd("game_players", "game_player:"+bot_player.login_token);
 												  		redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
-												  		that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
+												  		that.returnData(msg.playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
 					                      // console.log(data);
 					                      // console.log('4');
 					                      next(data)
@@ -235,7 +313,7 @@ PoolRemote.prototype = {
 										} else {
 											redis.hgetall("game_player:"+msg.playerId, function(err, playerDetails) {
 												redis.hgetall("game_player:"+playerDetails.opponentId, function(err, opponentDetails) {
-													that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  opponentDetails.player_ip, false, false, opponentDetails.device_avatar_id, function(data){
+													that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  opponentDetails.player_ip, false, false, parseInt(opponentDetails.device_avatar_id), function(data){
 			                      // console.log(data);
 			                      // console.log('5');
 			                      next(data)
@@ -272,29 +350,10 @@ PoolRemote.prototype = {
 		})	
   },
 
-	returnAddData: function(channel, clubId, sid, uid, cb) {
-		cb({
-			success: true,
-			clubId: clubId
-		})
-	},
-
-	addEventListers: function(channel) {
-		var that = this,
-				board = channel.board,
-				redis = that.app.get('redis');
-    console.log("Hi I am here");
-    // console.log(board);
-    // console.log(channel.board);
-		board.eventEmitter.on("addPlayer", function() {
-			channel.pushMessage("addPlayer", {
-				quarterFinal: channel.board.quarterFinal,
-				semiFinal: channel.board.semiFinal,
-				finalGame: channel.board.finalGame
-			})
-		});
-	}
-
+  sendMessageToUser: function(uid, serverId, msg) {
+   this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, "addPlayerss"]}, function(data) {
+   });
+  }
 
 }
 

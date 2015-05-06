@@ -82,6 +82,13 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
       alert("neeraj");
       console.log(data);
     })
+
+    window.pomelo.on("addPlayerss", function(data) {
+      var length = data.quarterFinal.length;
+      // alert(data.quarterFinal[length-1][0]);
+      console.log(data);
+    })
+
   };
 
   listenCallbacks();

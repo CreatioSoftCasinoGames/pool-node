@@ -80,10 +80,11 @@ Handler.prototype.enter= function(msg, session, next) {
 
 Handler.prototype.joinClub=function(msg, session, next) {
 	// console.log(msg);
-	// console.log(session);
+	console.log(session);
   var that = this;
   var board = null;
   console.log('Sesssion - ' + session.uid);
+  console.log(that.app.get('serverId'));
   that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
     session.set("clubConfigId", msg.clubConfigId);
     session.set("clubId", data.clubId);
@@ -104,12 +105,13 @@ Handler.prototype.joinClub=function(msg, session, next) {
 Handler.prototype.sendMessage= function(msg, session, next) {
 	var that = this;
 	var redis = that.app.get("redis");
-	redis.hgetall("game_player:"+session.uid, function(err, data) {
-		opponentId = data.opponentId;
-		serverId = data.player_server_id;
-		that.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [opponentId, msg, "generalProgress"]}, function(data) {
-    });
-	})
+	next(null, {});
+	// redis.hgetall("game_player:"+session.uid, function(err, data) {
+	// 	opponentId = data.opponentId;
+	// 	serverId = data.player_server_id;
+	// 	that.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [opponentId, msg, "generalProgress"]}, function(data) {
+ //    });
+	// })
 };
 
 var onUserLeave = function(app, session) {
