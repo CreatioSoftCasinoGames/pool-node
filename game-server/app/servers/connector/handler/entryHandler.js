@@ -80,7 +80,7 @@ Handler.prototype.enter= function(msg, session, next) {
 
 Handler.prototype.joinClub=function(msg, session, next) {
 	// console.log(msg);
-	console.log(session);
+	// console.log(session);
   var that = this;
   var board = null;
   console.log('Sesssion - ' + session.uid);

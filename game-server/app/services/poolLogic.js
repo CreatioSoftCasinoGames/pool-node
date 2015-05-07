@@ -26,70 +26,85 @@ Board.prototype = {
 
 	},
 
-	addPlayer: function(playerId) {
+
+	addPlayer: function(playerId, isDummy) {
 		var that = this;
-		var player = new Player(playerId, that.game);
-		var opponentFound = false;
+		var player = new Player(playerId, isDummy, that.redis, function(data) {
+				console.log('Player details added !');
+				var opponentFound = false;
+	    	if (that.clubType == "OneToOne") {
+			    that.playersToAdd.push(player);
+			    that.eventEmitter.emit("addPlayer");
+			  } else {
+			    that.players.push(player);
+			    that.temp.push(player);
+			    if (player.isDummy == true) {
+			    	player.playerIp = null;
+			    }
+			    if (that.temp.length == 2) {
+			    	// console.log(that.temp);
+		        that.temp[0].isServer = true;
+		        that.temp[1].isServer = false;
+	            if ((that.temp[0].isDummy == true) && (that.temp[1].isDummy == true)) {
+	            	var winnerId = that.temp[0].playerId;
+	            	console.log('Winner id - ' + winnerId);
+	            	setTimeout(function(){
+	            		console.log("Are you there");
+	            		that.gameOver(winnerId);
+	            	},10000);
+	            }
 
-		// console.log(that.clubType);
+			        if (that.quarterFinal.length > 4) {
+			            that.quarterFinal = [];
+			        }
+			        that.quarterFinal.push(that.temp);
+			        that.temp = [];
 
-		if (that.clubType == "OneToOne"){
-			that.playersToAdd.push(player);
-			// console.log(this.playersToAdd);
-			that.eventEmitter.emit("addPlayer");
-		} else {
-			that.players.push(player);
-			that.temp.push(player);
-				if (that.temp.length == 2){
-					if(that.quarterFinal.length > 4) {
-						that.quarterFinal = [];
-					}
-					that.quarterFinal.push(that.temp);
-					that.temp = [];
-				}
-      // }, 5000)
-			// console.log(that.quarterFinal);
-			that.eventEmitter.emit("addPlayer");
+			    }
+			    that.eventEmitter.emit("addPlayer");
 
-		}		
+			  }
+		});
 	},
 
-	gameOver: function(winner){
-		var that = this;
-		_.each(that.quarterFinal, function(filteredPlayer) {
-			if(_.indexOf(that.quarterFinal[0], winner) >= 0) {
-				if (_.where(that.semiFinal[0], {playerId: winner.playerId}).length < 1) {
-					that.semiFinal[0].push(winner);
-				} 
-			} else if (_.indexOf(that.quarterFinal[1], winner) >= 0) {
-				if (_.where(that.semiFinal[0], {playerId: winner.playerId}).length < 1) {
-					that.semiFinal[0].push(winner);
-				} 
-			} else if (_.indexOf(that.quarterFinal[2], winner) >= 0) {
-				if (_.where(that.semiFinal[1], {playerId: winner.playerId}).length < 1) {
-					that.semiFinal[1].push(winner);
-				} 
-			} else if (_.indexOf(that.quarterFinal[3], winner) >= 0) {
-				if (_.where(that.semiFinal[1], {playerId: winner.playerId}).length < 1) {
-					that.semiFinal[1].push(winner);
+
+	gameOver: function(winnerId){
+		var that = this,
+				playerCount = 0;
+// console.log();
+		_.each(that.quarterFinal, function(player) {
+			playerCount++;
+			//If winner found at 0, 2, 4 or 6 index of Quarter final
+			console.log(player[0].playerId + ' and ' + winnerId);
+			if(player[0].playerId == winnerId) {
+				console.log('Winner found at - ' + (playerCount-1) +' !')
+				if(playerCount == 1 || playerCount == 2) {
+					that.semiFinal[0].push(player[0]);
+				} else if(playerCount == 3 || playerCount == 4) {
+					that.semiFinal[1].push(player[0]);
+				}
+			}
+			//If winner found at 1, 3, 5 or 7 index of Quarter final
+			// console.log(player[1].playerId)
+			if(player[1].playerId == winnerId) {
+				console.log('Winner found at - ' + (playerCount-1) +' !')
+				if(playerCount == 1 || playerCount == 2) {
+					that.semiFinal[0].push(player[1]);
+				} else if(playerCount == 3 || playerCount == 4) {
+					that.semiFinal[1].push(player[1]);
 				} 
 			}
-			
-    });
 
-    _.each(that.semiFinal, function(semiFilteredPlayer) {
-			if(_.indexOf(that.semiFinal[0], winner) >= 0) {
-				if (_.where(that.finalGame, {playerId: winner.playerId}).length < 1) {
-					that.finalGame.push(winner);
-				} 
-			} else if (_.indexOf(that.semiFinal[1], winner) >= 0) {
-				if (_.where(that.finalGame, {playerId: winner.playerId}).length < 1) {
-					that.finalGame.push(winner);
-				} 
-			}
-			
-    });
+      
 
+
+
+
+
+    });
+    
+
+    that.eventEmitter.emit("gameOver");
 	},
 
 
@@ -136,8 +151,23 @@ var Game = function(board) {
 };
 
 
-var Player = function(playerId) {
-	this.playerId = playerId;
+var Player = function(playerId, isDummy, redis, cb) {
+	var that = this;
+	that.playerId = playerId;
+	that.isDummy = isDummy;
+	redis.hgetall("game_player:"+playerId, function(err, data){
+		if(!!data) {
+		  that.playerLevel = data.player_level;
+		  that.playerName = data.player_name;
+		  that.playerXp = data.player_xp;
+		  that.playerImage = data.player_image;
+		  that.playerIp = data.yoursIp;
+		  that.playerAvtarId = data.device_avatar_id;
+		  cb()
+		} else {
+			cb()
+		}
+	});
 };
 
 exports.Board = Board;

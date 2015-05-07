@@ -46,7 +46,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
 
   $scope.gameOver = function() {
 
-    window.pomelo.request("pool.poolHandler.gameOver", {winner: 55}, function(data) {
+    window.pomelo.request("pool.poolHandler.gameOver", {playerId: "602e8ffd55"}, function(data) {
       console.log(data);  
     })
 
@@ -83,9 +83,9 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
       console.log(data);
     })
 
-    window.pomelo.on("addPlayerss", function(data) {
+    window.pomelo.on("addPlayer", function(data) {
       var length = data.quarterFinal.length;
-      // alert(data.quarterFinal[length-1][0]);
+      // alert(data);
       console.log(data);
     })
 
