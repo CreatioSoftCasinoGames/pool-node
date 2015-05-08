@@ -4,26 +4,32 @@ var events = require('events');
 var Board = function(clubId, redis, clubType) {
 	this.clubId 		 	= clubId;
 	this.redis 				= redis;
-	this.clubType    = clubType;
+	this.clubType    	= clubType;
 	this.gamePlayers 	=	[];
 	this.leavePlayers	=	[];
 	this.gameRunning 	= false;
 	this.eventEmitter = new events.EventEmitter();
-	console.log(this.eventEmitter);
 	this.init()
 }
 
 Board.prototype = {
 
 	init: function() {
-		this.players = [];
-		this.playersToAdd = [];
-		this.temp = [];
-		this.quarterFinal = [];
-		this.semiFinal = [ [], [] ];
-		this.finalGame = [];
-		this.game = new Game(this);
-
+		this.players 				= [];
+		this.playersToAdd 	= [];
+		this.temp 					= [];
+		this.quarterFinal 	= [];
+		this.semiFinal 			= [ [], [] ];
+		this.finalGame 			= [];
+		this.game 					= new Game(this);
+		this.firstQuarterOver 	= false;
+		this.secondQuarterOver = false;
+		this.thirdQuarterOver 	= false;
+		this.fourthQuarterOver = false;
+		this.firstSemiOver 	= false;
+		this.secondSemiOver = false;
+		this.finalFromFirstFound = false;
+		this.finalFromSecondFound = false;
 	},
 
 
@@ -34,7 +40,6 @@ Board.prototype = {
 				var opponentFound = false;
 	    	if (that.clubType == "OneToOne") {
 			    that.playersToAdd.push(player);
-			    that.eventEmitter.emit("addPlayer");
 			  } else {
 			    that.players.push(player);
 			    that.temp.push(player);
@@ -50,8 +55,8 @@ Board.prototype = {
 	            	console.log('Winner id - ' + winnerId);
 	            	setTimeout(function(){
 	            		console.log("Are you there");
-	            		that.gameOver(winnerId);
-	            	},10000);
+	            		that.gameOver(winnerId, "quarterFinal", function(){});
+	            	},3000);
 	            }
 
 			        if (that.quarterFinal.length > 4) {
@@ -68,43 +73,106 @@ Board.prototype = {
 	},
 
 
-	gameOver: function(winnerId){
+	gameOver: function(winnerId, stage, cb){
 		var that = this,
-				playerCount = 0;
-// console.log();
-		_.each(that.quarterFinal, function(player) {
-			playerCount++;
-			//If winner found at 0, 2, 4 or 6 index of Quarter final
-			console.log(player[0].playerId + ' and ' + winnerId);
-			if(player[0].playerId == winnerId) {
-				console.log('Winner found at - ' + (playerCount-1) +' !')
-				if(playerCount == 1 || playerCount == 2) {
-					that.semiFinal[0].push(player[0]);
-				} else if(playerCount == 3 || playerCount == 4) {
-					that.semiFinal[1].push(player[0]);
+				quarterCount = 0;
+				semiCount = 0;
+		console.log(stage);
+		if(stage == "quarterFinal") {
+			_.each(that.quarterFinal, function(player) {
+				quarterCount++;
+				//If winner found at 0, 2, 4 or 6 index of Quarter final
+				if(player[0].playerId == winnerId) {
+					console.log('Winner found at - ' + (quarterCount-1) +' !')
+					if(quarterCount == 1 || quarterCount == 2) {
+						if(_.where(that.semiFinal[0], {playerId: winnerId}).length < 1) {
+							console.log('Push in semi final list - ' + that.semiFinal[0].length);
+							that.semiFinal[0].push(player[0]);
+						}
+					} else if(quarterCount == 3 || quarterCount == 4) {
+						if(_.where(that.semiFinal[1], {playerId: winnerId}).length < 1) {
+							console.log('Push in semi final list - ' + that.semiFinal[1].length);
+							that.semiFinal[1].push(player[0]);
+						}
+					}
 				}
+				//If winner found at 1, 3, 5 or 7 index of Quarter final
+				if(player[1].playerId == winnerId) {
+					console.log('Winner found at - ' + (quarterCount-1) +' !')
+					if(quarterCount == 1 || quarterCount == 2) {
+						if(_.where(that.semiFinal[0], {playerId: winnerId}).length < 1) {
+							console.log('Push in semi final list - ' + that.semiFinal[0].length);
+							that.semiFinal[0].push(player[0]);
+						}
+					} else if(quarterCount == 3 || quarterCount == 4) {
+						if(_.where(that.semiFinal[1], {playerId: winnerId}).length < 1) {
+							console.log('Push in semi final list - ' + that.semiFinal[1].length);
+							that.semiFinal[1].push(player[0]);
+						}
+					} 
+				}
+
+			  //If first semi final index has both bots then Game over
+			  if(!that.firstSemiOver ) {
+			  	if (that.semiFinal[0].length > 0) {
+						if (that.semiFinal[0][0].isDummy ) {
+							if (that.semiFinal[0].length > 1) {
+								if (that.semiFinal[0][1].isDummy) {
+									var firstSemiWinner = that.semiFinal[0][0].playerId
+									setTimeout(function(){
+										that.firstSemiOver = true;
+										that.gameOver(firstSemiWinner, "semiFinal", function(){});
+					      		console.log(" hey Are you there");
+					      	},5000);
+								}
+							}
+				    }
+					}
+			  }
+
+			  //If second semi final index has both bots then Game over
+			  if(!that.secondSemiOver) {
+			  	if (that.semiFinal[1].length > 0) {
+						if (that.semiFinal[1][0].isDummy ) {
+							if (that.semiFinal[1].length > 1) {
+								if (that.semiFinal[1][1].isDummy) {
+									var secondSemiWinner = that.semiFinal[1][0].playerId
+									setTimeout(function(){
+										that.secondSemiOver = true;
+										that.gameOver(secondSemiWinner, "semiFinal", function(){});
+					      	},5000);
+								}
+							}
+				    }
+					}
+			  }
+			  if(quarterCount >= 4) {
+			  	that.eventEmitter.emit("gameOver");
+			  	cb();
+			  }
+	    });
+		} else if(stage = "semiFinal") {
+			//Transfer semi final players into final players array
+			if(that.semiFinal[0].length > 1 || that.semiFinal[1].length > 1) {
+				_.each(that.semiFinal, function(playerSet) {
+					_.each(playerSet, function(player) {
+						semiCount++;
+						console.log((semiCount) + '. Player - ' + player.playerId + ' and winner - ' + winnerId);
+						if(player.playerId == winnerId) {
+								console.log('Push in winners list!');
+							if(_.where(that.finalGame, {playerId: winnerId}).length < 1) {
+								console.log('Winner not exists - Push in winners list!');
+								that.finalGame.push(player);
+							}
+						}
+						if(semiCount >= that.semiFinal[0].length + that.semiFinal[1].length) {
+							that.eventEmitter.emit("gameOver");
+							cb();
+						}
+					});
+				});
 			}
-			//If winner found at 1, 3, 5 or 7 index of Quarter final
-			// console.log(player[1].playerId)
-			if(player[1].playerId == winnerId) {
-				console.log('Winner found at - ' + (playerCount-1) +' !')
-				if(playerCount == 1 || playerCount == 2) {
-					that.semiFinal[0].push(player[1]);
-				} else if(playerCount == 3 || playerCount == 4) {
-					that.semiFinal[1].push(player[1]);
-				} 
-			}
-
-      
-
-
-
-
-
-    });
-    
-
-    that.eventEmitter.emit("gameOver");
+		}
 	},
 
 
@@ -157,12 +225,12 @@ var Player = function(playerId, isDummy, redis, cb) {
 	that.isDummy = isDummy;
 	redis.hgetall("game_player:"+playerId, function(err, data){
 		if(!!data) {
-		  that.playerLevel = data.player_level;
+		  that.playerLevel = parseInt(data.player_level);
 		  that.playerName = data.player_name;
-		  that.playerXp = data.player_xp;
+		  that.playerXp = parseInt(data.player_xp);
 		  that.playerImage = data.player_image;
 		  that.playerIp = data.yoursIp;
-		  that.playerAvtarId = data.device_avatar_id;
+		  that.deviceAvatarId = parseInt(data.device_avatar_id);
 		  cb()
 		} else {
 			cb()

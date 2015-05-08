@@ -211,71 +211,74 @@ Handler.prototype = {
 
 
 	gameOver: function(msg, session, next) {
-		var that = this;
-		var redis = that.app.get("redis");
+
+		var that 			= this,
+				redis 		= that.app.get("redis"),
+				winnerId 	= msg.winnerId,
+				stage 		= msg.stage,
+				clubId 		=	null;
+
 		that.getPlayerAndChannel(session, function(player, channel) {
-			var clubId = channel.board.clubId;
+			clubId = channel.board.clubId;
 	    
+	    //Remove these players from online count
       redis.hgetall("club:"+clubId, function(err, clubData) {
 				redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
 					var onlinePlayers = !!data1 ? parseInt(data1) : 0;
 			    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers-2, function(err, data){
 				  });
 				});
-
 			});
 
 
 			if(channel.board.clubType == "OneToOne"){
 				channel.board.players = [];
-
-				next()
+				next();
 			} else {
-				_.each(channel.board.quarterFinal, function(filteredPlayer) {
-					if(_.indexOf(channel.board.quarterFinal[0], msg.winner) >= 0) {
-						if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
-							channel.board.semiFinal[0].push(msg.winner);
-						} 
-					} else if (_.indexOf(channel.board.quarterFinal[1], msg.winner) >= 0) {
-						if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
-							channel.board.semiFinal[0].push(msg.winner);
-						} 
-					} else if (_.indexOf(channel.board.quarterFinal[2], msg.winner) >= 0) {
-						if (_.where(channel.board.semiFinal[1], {playerId: msg.winner.playerId}).length < 1) {
-							channel.board.semiFinal[1].push(msg.winner);
-						} 
-					} else if (_.indexOf(channel.board.quarterFinal[3], msg.winner) >= 0) {
-						if (_.where(channel.board.semiFinal[1], {playerId: msg.winner.playerId}).length < 1) {
-							channel.board.semiFinal[1].push(msg.winner);
-						} 
-					}
+				channel.board.gameOver(winnerId, stage, function(data) {
+					next();
+				});
+				// _.each(channel.board.quarterFinal, function(filteredPlayer) {
+				// 	if(_.indexOf(channel.board.quarterFinal[0], msg.winner) >= 0) {
+				// 		if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
+				// 			channel.board.semiFinal[0].push(msg.winner);
+				// 		} 
+				// 	} else if (_.indexOf(channel.board.quarterFinal[1], msg.winner) >= 0) {
+				// 		if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
+				// 			channel.board.semiFinal[0].push(msg.winner);
+				// 		} 
+				// 	} else if (_.indexOf(channel.board.quarterFinal[2], msg.winner) >= 0) {
+				// 		if (_.where(channel.board.semiFinal[1], {playerId: msg.winner.playerId}).length < 1) {
+				// 			channel.board.semiFinal[1].push(msg.winner);
+				// 		} 
+				// 	} else if (_.indexOf(channel.board.quarterFinal[3], msg.winner) >= 0) {
+				// 		if (_.where(channel.board.semiFinal[1], {playerId: msg.winner.playerId}).length < 1) {
+				// 			channel.board.semiFinal[1].push(msg.winner);
+				// 		} 
+				// 	}
 					
-        });
+    //     });
 
-        _.each(channel.board.semiFinal, function(semiFilteredPlayer) {
-					if(_.indexOf(channel.board.semiFinal[0], msg.winner) >= 0) {
-						if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {
-							channel.board.finalGame.push(msg.winner);
-						} 
-					} else if (_.indexOf(channel.board.semiFinal[1], msg.winner) >= 0) {
-						if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {
-							channel.board.finalGame.push(msg.winner);
-						} 
-					}
+     //    _.each(channel.board.semiFinal, function(semiFilteredPlayer) {
+					// if(_.indexOf(channel.board.semiFinal[0], msg.winner) >= 0) {
+					// 	if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {
+					// 		channel.board.finalGame.push(msg.winner);
+					// 	} 
+					// } else if (_.indexOf(channel.board.semiFinal[1], msg.winner) >= 0) {
+					// 	if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {
+					// 		channel.board.finalGame.push(msg.winner);
+					// 	} 
+					// }
 					
-        });
+     //    });
 
-        channel.pushMessage("gameOver", {
-					quarterFinal: channel.board.quarterFinal,
-					semiFinal: channel.board.semiFinal,
-					finalGame: channel.board.finalGame
-				})
+    //     channel.pushMessage("gameOver", {
+				// 	quarterFinal: channel.board.quarterFinal,
+				// 	semiFinal: channel.board.semiFinal,
+				// 	finalGame: channel.board.finalGame
+				// })
 
-        next(null,{
-				quarterFinal: channel.board.quarterFinal,
-				semiFinal: channel.board.semiFinal,
-				finalGame: channel.board.finalGame
-			})
+        
 
 			}
 		

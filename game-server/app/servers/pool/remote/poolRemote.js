@@ -39,12 +39,12 @@ PoolRemote.prototype = {
 	add: function(uid, sid, clubConfigId, playerIp, flag, cb) {
 		var that = this;
 		that.findClub(clubConfigId, function(clubId) {
-			that.addToClub(uid, sid, clubId, flag, false, playerIp, cb);
+			that.addToClub(uid, sid, clubConfigId, clubId, flag, false, playerIp, cb);
 
 		});
 	},
 
-  addToClub: function(uid, sid, clubId, flag, forceJoin, playerIp, next) {
+  addToClub: function(uid, sid, clubConfigId, clubId, flag, forceJoin, playerIp, next) {
 		var that = this;
 		var redis = that.app.get("redis");
 		var channel = that.channelService.getChannel(clubId, flag);
@@ -155,9 +155,11 @@ PoolRemote.prototype = {
 
 								if(responseData.success && responseData.message == "Opponent found!") {
 									responseData.clubId = clubId;
+									responseData.clubConfigId = clubConfigId;
 									next(responseData);
 								} else {
 									responseData.clubId = clubId;
+									responseData.clubConfigId = clubConfigId;
 									next(responseData);
 								}
 								//Add all waiting players into players
