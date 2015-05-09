@@ -59,6 +59,12 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
     })
   };
 
+  $scope.standUp = function() {
+    window.pomelo.request("pool.poolHandler.standUp", {}, function(data) {
+      console.log(data)
+    })
+  };
+
   $scope.general = function() {
     // pomelo.request("pool.poolHandler.general", {name: "Amrendra", rank: 10}, function(data) {
     window.pomelo.request("connector.entryHandler.sendMessage", {name: "Amrendra", rank: 10}, function(data) {

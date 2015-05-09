@@ -21,19 +21,44 @@ PoolRemote.prototype = {
         freeClubs = false,
 				redis = that.app.get("redis");
 
-		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
-			if(data.length!=0) {
-				freeClubs = true;
-				cb(parseInt(data[0].split(":")[1]));
-			} else if(data.length == 0 || !freeClubs) {
-				backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
-					if(data.valid) {
-						redisUtil.createClub(data.club, redis);
-						cb(parseInt(data.club.id));
-					}
-				})
-			}
-		});
+      console.log(clubConfigId);
+      redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
+      	console.log(typeData);
+      	if (typeData.club_type == "OneToOne") {
+      		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 8, -1, "limit", 0, 1, function(err, data) {
+
+						if(data.length!=0) {
+							freeClubs = true;
+							cb(parseInt(data[0].split(":")[1]));
+						} else if(data.length == 0 || !freeClubs) {
+							backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
+								if(data.valid) {
+									redisUtil.createClub(data.club, redis);
+									cb(parseInt(data.club.id));
+								}
+							})
+					  }
+          });            		
+    	
+		    } else if (typeData.club_type ==  "Tournament") {
+		    	redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
+
+						if(data.length!=0) {
+							freeClubs = true;
+							cb(parseInt(data[0].split(":")[1]));
+						} else if(data.length == 0 || !freeClubs) {
+							backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
+								if(data.valid) {
+									redisUtil.createClub(data.club, redis);
+									cb(parseInt(data.club.id));
+								}
+							})
+					  }
+		      });
+
+		    }
+		  });
+
 	},
   
 	add: function(uid, sid, clubConfigId, playerIp, flag, cb) {
@@ -70,18 +95,23 @@ PoolRemote.prototype = {
 			  		  that.addEventListers(channel);
 			  		  channel.board.addPlayer(uid, false);
 			  		  channel.board.quarterFinal = [];
+				  		channel.board.semiFinal = [[], []];
+				  		channel.board.finalGame = [];
 			  	}else{
 			  		channel.board.addPlayer(uid, false);
 			  		// that.addEventListers(channel);
 			  		channel.board.quarterFinal = [];
+			  		channel.board.semiFinal = [[], []];
+			  		channel.board.finalGame = [];
 			  	}
 			  	
 			  	//Get opponenet
 			  	// console.log(playerDetails);
 					redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
-						that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
+						that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, sid: sid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
 							if(!!responseData ){
-								setTimeout(function(){
+								if (channel.board.clubType == "Tournament") {
+									setTimeout(function(){
 										var botTimer = setInterval(function(){
 											redis.smembers("available_bots", function(err, data){
 												if(!!data && data.length > 0) {
@@ -129,7 +159,9 @@ PoolRemote.prototype = {
 												
 											});
 										},500);
-								},500) 
+								  },500) 
+								}
+
 
 								if (responseData.isDummy == true){
 									redis.sadd("busy_bots", responseData.opponentId,  function(err, data){
@@ -185,9 +217,24 @@ PoolRemote.prototype = {
     			if(!!data && !!data.player_server_id) {
     				sid = data.player_server_id;
     				msg = {};
-    				msg.quarterFinal = board.quarterFinal,
-						msg.semiFinal = board.semiFinal,
-						msg.finalGame = board.finalGame
+    				msg.quarterFinal = board.quarterFinal;
+						msg.semiFinal = board.semiFinal;
+
+						
+    				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+    					console.log("1 One");
+    					msg.semiFinal = [[]]
+							msg.semiFinal[0] = msg.semiFinal[1];
+						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+							console.log("2 Two");
+							msg.semiFinal = [[]]
+							msg.semiFinal[1] = msg.semiFinal[0];
+						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+							console.log("3 Three ");
+    					msg.semiFinal = [];
+    				}
+
+						msg.finalGame = board.finalGame;
     				that.sendMessageToUser(player.playerId, sid, msg);
     			}
     		})
@@ -200,9 +247,25 @@ PoolRemote.prototype = {
     			if(!!data && !!data.player_server_id) {
     				sid = data.player_server_id;
     				msg = {};
-    				msg.quarterFinal = board.quarterFinal,
-						msg.semiFinal = board.semiFinal,
-						msg.finalGame = board.finalGame
+    				msg.quarterFinal = board.quarterFinal;
+    				msg.semiFinal = board.semiFinal;
+    				console.log(msg.semiFinal);
+    				
+    				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+    					console.log("1 One 1 One");
+    					msg.semiFinal = [[]]
+							msg.semiFinal[0] = board.semiFinal[1];
+						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+							console.log(msg.semiFinal);
+							console.log("2 Two 2 Two");
+							msg.semiFinal = [[]]
+							msg.semiFinal[0] = board.semiFinal[0];
+						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+							console.log("3 Three 3 Three ");
+    					msg.semiFinal = [];
+    				}
+						
+						msg.finalGame = board.finalGame;
     				that.sendMessageToUser(player.playerId, sid, msg);
     			}
     		})
@@ -210,13 +273,16 @@ PoolRemote.prototype = {
 		});
 		
 	},
+
+
+
 	
 
 
   getOpponent: function(msg, next) {
-  	// console.log(msg);
-  	// console.log(msg.channel.board.clubType);
-  	// console.log(msg.channel.board.quarterFinal);
+
+  	msg.channel.add(msg.playerId, msg.sid);
+
 		var that = this,
 		  redis = that.app.get("redis"),
 		  opponentFound = false,
@@ -298,13 +364,6 @@ PoolRemote.prototype = {
 						                    })
 														  });
 														});
-
-														// msg.channel.board.addPlayer(bot_player.login_token, true);
-														//  that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
-					         //              // console.log(data);
-					         //              // console.log('3');
-					         //              next(data)
-					         //            })
 												  });												  
 													
 											  } else {
@@ -371,7 +430,18 @@ PoolRemote.prototype = {
   sendMessageToUser: function(uid, serverId, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, "addPlayer"]}, function(data) {
    });
-  }
+  },
+
+
+  kick: function(uid, sid, clubId, cb) {
+		var channel = this.channelService.getChannel(clubId, false);
+		var redis = this.app.get("redis");
+		if( !! channel) {
+			channel.leave(uid, sid);
+		}
+			
+		cb()
+	},
 
 }
 

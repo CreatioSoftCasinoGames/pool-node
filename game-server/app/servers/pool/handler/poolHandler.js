@@ -58,6 +58,15 @@ Handler.prototype = {
 		})	
 	},
 
+	standUp: function(msg, session, next) {
+		var that = this;
+		that.app.rpc.pool.poolRemote.kick(session, session.uid, that.app.get('serverId'), session.get('clubId'), function() {
+			next(null, {
+				success: true
+			})
+		});
+	},
+
 	general: function(msg, session, next) {
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
@@ -211,6 +220,7 @@ Handler.prototype = {
 
 
 	gameOver: function(msg, session, next) {
+		console.log(msg);
 
 		var that 			= this,
 				redis 		= that.app.get("redis"),
@@ -238,48 +248,6 @@ Handler.prototype = {
 				channel.board.gameOver(winnerId, stage, function(data) {
 					next();
 				});
-				// _.each(channel.board.quarterFinal, function(filteredPlayer) {
-				// 	if(_.indexOf(channel.board.quarterFinal[0], msg.winner) >= 0) {
-				// 		if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
-				// 			channel.board.semiFinal[0].push(msg.winner);
-				// 		} 
-				// 	} else if (_.indexOf(channel.board.quarterFinal[1], msg.winner) >= 0) {
-				// 		if (_.where(channel.board.semiFinal[0], {playerId: msg.winner.playerId}).length < 1) {
-				// 			channel.board.semiFinal[0].push(msg.winner);
-				// 		} 
-				// 	} else if (_.indexOf(channel.board.quarterFinal[2], msg.winner) >= 0) {
-				// 		if (_.where(channel.board.semiFinal[1], {playerId: msg.winner.playerId}).length < 1) {
-				// 			channel.board.semiFinal[1].push(msg.winner);
-				// 		} 
-				// 	} else if (_.indexOf(channel.board.quarterFinal[3], msg.winner) >= 0) {
-				// 		if (_.where(channel.board.semiFinal[1], {playerId: msg.winner.playerId}).length < 1) {
-				// 			channel.board.semiFinal[1].push(msg.winner);
-				// 		} 
-				// 	}
-					
-    //     });
-
-     //    _.each(channel.board.semiFinal, function(semiFilteredPlayer) {
-					// if(_.indexOf(channel.board.semiFinal[0], msg.winner) >= 0) {
-					// 	if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {
-					// 		channel.board.finalGame.push(msg.winner);
-					// 	} 
-					// } else if (_.indexOf(channel.board.semiFinal[1], msg.winner) >= 0) {
-					// 	if (_.where(channel.board.finalGame, {playerId: msg.winner.playerId}).length < 1) {
-					// 		channel.board.finalGame.push(msg.winner);
-					// 	} 
-					// }
-					
-     //    });
-
-    //     channel.pushMessage("gameOver", {
-				// 	quarterFinal: channel.board.quarterFinal,
-				// 	semiFinal: channel.board.semiFinal,
-				// 	finalGame: channel.board.finalGame
-				// })
-
-        
-
 			}
 		
 		});		
