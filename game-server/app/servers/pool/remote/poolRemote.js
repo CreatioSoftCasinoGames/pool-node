@@ -21,11 +21,9 @@ PoolRemote.prototype = {
         freeClubs = false,
 				redis = that.app.get("redis");
 
-      console.log(clubConfigId);
       redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
-      	console.log(typeData);
       	if (typeData.club_type == "OneToOne") {
-      		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 8, -1, "limit", 0, 1, function(err, data) {
+      		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
 
 						if(data.length!=0) {
 							freeClubs = true;
@@ -42,19 +40,24 @@ PoolRemote.prototype = {
     	
 		    } else if (typeData.club_type ==  "Tournament") {
 		    	redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
-
-						if(data.length!=0) {
-							freeClubs = true;
-							cb(parseInt(data[0].split(":")[1]));
-						} else if(data.length == 0 || !freeClubs) {
-							backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
-								if(data.valid) {
-									redisUtil.createClub(data.club, redis);
-									cb(parseInt(data.club.id));
-								}
-							})
-					  }
-		      });
+      			redis.zrange("club_config_occupancy:"+clubConfigId, 0, -1, function(err, clubId){
+      				redis.zincrby("club_config_occupancy:"+clubConfigId, 1, "club", clubId, function(err, incData){
+      					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 8, -1, "limit", 0,  1, function(err, incValue){
+      						if(data.length!=0) {
+										freeClubs = true;
+										cb(parseInt(data[0].split(":")[1]));
+										} else if(data.length == 0 || !freeClubs) {
+											backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
+												if(data.valid) {
+													redisUtil.createClub(data.club, redis);
+													cb(parseInt(data.club.id));
+												}
+											})
+									  }
+      					});		
+      				});
+	          });
+      		});
 
 		    }
 		  });
@@ -222,15 +225,12 @@ PoolRemote.prototype = {
 
 						
     				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
-    					console.log("1 One");
     					msg.semiFinal = [[]]
 							msg.semiFinal[0] = msg.semiFinal[1];
 						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
-							console.log("2 Two");
 							msg.semiFinal = [[]]
 							msg.semiFinal[1] = msg.semiFinal[0];
 						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
-							console.log("3 Three ");
     					msg.semiFinal = [];
     				}
 
@@ -252,16 +252,13 @@ PoolRemote.prototype = {
     				console.log(msg.semiFinal);
     				
     				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
-    					console.log("1 One 1 One");
     					msg.semiFinal = [[]]
 							msg.semiFinal[0] = board.semiFinal[1];
 						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
 							console.log(msg.semiFinal);
-							console.log("2 Two 2 Two");
 							msg.semiFinal = [[]]
 							msg.semiFinal[0] = board.semiFinal[0];
 						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
-							console.log("3 Three 3 Three ");
     					msg.semiFinal = [];
     				}
 						
@@ -305,7 +302,7 @@ PoolRemote.prototype = {
 							redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 								redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 									redis.hgetall("game_player:"+playerList[0], function(err, player) {
-                    that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
+                    that.returnData(msg.playerId, playerList[0], player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
                        // console.log(data);
                        // console.log('1');
                        next(data)
