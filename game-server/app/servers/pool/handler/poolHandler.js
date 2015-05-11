@@ -220,37 +220,50 @@ Handler.prototype = {
 
 
 	gameOver: function(msg, session, next) {
-		console.log(msg);
-
+		if(!msg.winnerId || msg.winnerId == "null"){
+			console.error('Parameters mismatch!');
+			next(null, {
+				msg: "Key mismatch !"
+			});
+			return;
+		}
 		var that 			= this,
-				redis 		= that.app.get("redis"),
-				winnerId 	= msg.winnerId,
-				stage 		= msg.stage,
-				clubId 		=	null;
+			redis 		= that.app.get("redis"),
+			winnerId 	= msg.winnerId,
+			stage 		= msg.stage,
+			clubId 		=	null;
 
 		that.getPlayerAndChannel(session, function(player, channel) {
-			clubId = channel.board.clubId;
-	    
-	    //Remove these players from online count
-      redis.hgetall("club:"+clubId, function(err, clubData) {
-				redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
-					var onlinePlayers = !!data1 ? parseInt(data1) : 0;
-			    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers-2, function(err, data){
-				  });
+			if(!!player && !!channel) {
+				clubId = channel.board.clubId;
+				//Remove these players from online count
+	      redis.hgetall("club:"+clubId, function(err, clubData) {
+					redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+						var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+				    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers-2, function(err, data){
+					  });
+					});
 				});
-			});
 
-
-			if(channel.board.clubType == "OneToOne"){
-				channel.board.players = [];
-				next();
-			} else {
-				channel.board.gameOver(winnerId, stage, function(data) {
+				if(channel.board.clubType == "OneToOne"){
+					channel.board.players = [];
 					next();
-				});
+				} else {
+					channel.board.gameOver(winnerId, stage, function(data) {
+						next(null,{
+							success: true,
+							message: 'Tournament fixture sent!'
+						});
+					});
+				}
+			} else {
+				console.error('Player or channel not found!');
+				next(null, {
+					success: false,
+					message: 'Player or channel not found!'
+				})
 			}
-		
-		});		
+		});	
 	},
 
 }

@@ -42,7 +42,7 @@ PoolRemote.prototype = {
 		    	redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
       			redis.zrange("club_config_occupancy:"+clubConfigId, 0, -1, function(err, clubId){
       				redis.zincrby("club_config_occupancy:"+clubConfigId, 1, "club", clubId, function(err, incData){
-      					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 8, -1, "limit", 0,  1, function(err, incValue){
+      					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, incValue){
       						if(data.length!=0) {
 										freeClubs = true;
 										cb(parseInt(data[0].split(":")[1]));
@@ -249,13 +249,13 @@ PoolRemote.prototype = {
     				msg = {};
     				msg.quarterFinal = board.quarterFinal;
     				msg.semiFinal = board.semiFinal;
-    				console.log(msg.semiFinal);
+    				// console.log(msg.semiFinal);
     				
     				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
     					msg.semiFinal = [[]]
 							msg.semiFinal[0] = board.semiFinal[1];
 						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
-							console.log(msg.semiFinal);
+							// console.log(msg.semiFinal);
 							msg.semiFinal = [[]]
 							msg.semiFinal[0] = board.semiFinal[0];
 						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
