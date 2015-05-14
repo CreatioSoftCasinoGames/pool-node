@@ -59,6 +59,7 @@ Handler.prototype = {
 	},
 
 	standUp: function(msg, session, next) {
+		console.log("I am in handler");
 		var that = this;
 		that.app.rpc.pool.poolRemote.kick(session, session.uid, that.app.get('serverId'), session.get('clubId'), function() {
 			next(null, {
@@ -68,8 +69,10 @@ Handler.prototype = {
 	},
 
 	general: function(msg, session, next) {
+		console.log(msg);
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
+			console.log(channel);
 			that.generalProgress(channel, session.uid, msg);
 			next(null, {
 				success: true
@@ -220,10 +223,18 @@ Handler.prototype = {
 
 
 	gameOver: function(msg, session, next) {
-		if(!msg.winnerId || msg.winnerId == "null"){
+		console.log(msg);
+		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
 			console.error('Parameters mismatch!');
 			next(null, {
 				msg: "Key mismatch !"
+			});
+			return;
+		}
+		if(!msg.stage || msg.stage == "null" || msg.stage == ""){
+			console.error('Parameters mismatch!');
+			next(null, {
+				msg: "stage not found !"
 			});
 			return;
 		}

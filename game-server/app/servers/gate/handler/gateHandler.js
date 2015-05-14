@@ -13,6 +13,7 @@ var Handler = function(app) {
 var handler = Handler.prototype;
 
 handler.getConnector = function(msg, session, next) {
+	console.log(msg);
 	var self = this;
 	var redis = self.app.get("redis");
 	var connectors = this.app.getServersByType('connector');
@@ -37,13 +38,27 @@ handler.getConnector = function(msg, session, next) {
 	    })
 	  }
   } else if(!!msg.fb_id && !!msg.fb_friends_list && !msg.device_id) {
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id, first_name: msg.playerName}, self.app, function(user) {
+  	firstName = !!msg.first_name ? msg.first_name : 'Guest';
+		lastName = !!msg.last_name ? msg.last_name : 'User';
+		emailId = !!msg.email ? msg.email : null;
+		console.log(firstName );
+		console.log(lastName );
+		console.log(emailId );
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user) {
+			console.log(user);
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })
 		})
 	} else if(!!msg.fb_id && !!msg.fb_friends_list && !!msg.device_id) {
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, fb_friends_list: msg.friend_list, device_id: msg.device_id, first_name: msg.playerName}, self.app, function(user) {
+		firstName = !!msg.first_name ? msg.first_name : 'Guest';
+		lastName = !!msg.last_name ? msg.last_name : 'User';
+		emailId = !!msg.email ? msg.email : null;
+		console.log(firstName );
+		console.log(lastName );
+		console.log(emailId );
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.friend_list, device_id: msg.device_id}, self.app, function(user) {
+			// console.log(user);
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })

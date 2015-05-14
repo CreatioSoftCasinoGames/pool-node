@@ -66,6 +66,8 @@ PoolRemote.prototype = {
   
 	add: function(uid, sid, clubConfigId, playerIp, flag, cb) {
 		var that = this;
+		// that.channel.add(uid, sid);
+		
 		that.findClub(clubConfigId, function(clubId) {
 			that.addToClub(uid, sid, clubConfigId, clubId, flag, false, playerIp, cb);
 
@@ -76,9 +78,10 @@ PoolRemote.prototype = {
 		var that = this;
 		var redis = that.app.get("redis");
 		var channel = that.channelService.getChannel(clubId, flag);
-
+    // channel.add(uid, sid);
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
+
 			redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
 				var onlinePlayers = !!data1 ? parseInt(data1) : 0;
 		    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
@@ -219,6 +222,8 @@ PoolRemote.prototype = {
     		redis.hgetall("game_player:"+player.playerId, function(err, data) {
     			if(!!data && !!data.player_server_id) {
     				sid = data.player_server_id;
+
+    				
     				msg = {};
     				msg.quarterFinal = board.quarterFinal;
 						msg.semiFinal = board.semiFinal;
@@ -234,8 +239,18 @@ PoolRemote.prototype = {
     					msg.semiFinal = [];
     				}
 
+
+
+
 						msg.finalGame = board.finalGame;
-    				that.sendMessageToUser(player.playerId, sid, msg);
+						console.log(msg);
+						channel.pushMessage("addPlayer", msg);
+    				// that.sendMessageToUser(player.playerId, sid, msg);
+    				
+
+
+
+
     			}
     		})
     	});
@@ -263,7 +278,7 @@ PoolRemote.prototype = {
     				}
 						
 						msg.finalGame = board.finalGame;
-    				that.sendMessageToUser(player.playerId, sid, msg);
+    				// that.sendMessageToUser(player.playerId, sid, msg);
     			}
     		})
     	});
@@ -431,10 +446,14 @@ PoolRemote.prototype = {
 
 
   kick: function(uid, sid, clubId, cb) {
+  	console.log("I am in remote");
 		var channel = this.channelService.getChannel(clubId, false);
 		var redis = this.app.get("redis");
-		if( !! channel) {
+		if( !!channel) {
+			console.log(channel);
 			channel.leave(uid, sid);
+		} else {
+			console.error("channel not found");
 		}
 			
 		cb()

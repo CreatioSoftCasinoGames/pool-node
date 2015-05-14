@@ -91,42 +91,46 @@ Board.prototype = {
 				quarterCount 	= 0,
 				semiCount 		= 0,
 				callbackSent 	=	false,
-				quarterFinalWinnerFound = false;
+				quarterFinalWinnerFound = false,
+				semiFinalWinnerFound = false;
 
 		if(stage == "quarterFinal") {
 			_.each(that.quarterFinal, function(player) {
-				quarterCount++;
+				if (quarterCount <= 4) {
+					quarterCount++;
+				}
+				
 				//If winner found at 0, 2, 4 or 6 index of Quarter final
-				// console.log("1. Quarterfinal - player - " + player[0].playerId + ' winner - ' + winnerId);
+				console.log("1. Quarterfinal - player - " + player[0].playerId + ' winner - ' + winnerId);
 				if(player[0].playerId == winnerId) {
-					// console.log('Winner found at - ' + (quarterCount-1) +' !')
+					console.log('Winner found at - ' + (quarterCount-1) +' !')
 					if(quarterCount == 1 || quarterCount == 2) {
 						if(_.where(that.semiFinal[0], {playerId: winnerId}).length < 1) {
-							// console.log('Push in semi final list - ' + that.semiFinal[0].length);
+							console.log('Push in semi final list - ' + that.semiFinal[0].length);
 							that.semiFinal[0].push(player[0]);
 							quarterFinalWinnerFound = true;
 						}
 					} else if(quarterCount == 3 || quarterCount == 4) {
 						if(_.where(that.semiFinal[1], {playerId: winnerId}).length < 1) {
-							// console.log('Push in semi final list - ' + that.semiFinal[1].length);
+							console.log('Push in semi final list - ' + that.semiFinal[1].length);
 							that.semiFinal[1].push(player[0]);
 							quarterFinalWinnerFound = true;
 						}
 					}
 				}
 				//If winner found at 1, 3, 5 or 7 index of Quarter final
-				// console.log("2. Quarterfinal - player - " + player[1].playerId + ' winner - ' + winnerId);
+				console.log("2. Quarterfinal - player - " + player[1].playerId + ' winner - ' + winnerId);
 				if(player[1].playerId == winnerId) {
-					// console.log('Winner found at - ' + (quarterCount-1) +' !')
+					console.log('Winner found at - ' + (quarterCount-1) +' !')
 					if(quarterCount == 1 || quarterCount == 2) {
 						if(_.where(that.semiFinal[0], {playerId: winnerId}).length < 1) {
-							// console.log('Push in semi final list - ' + that.semiFinal[0].length);
+							console.log('Push in semi final list - ' + that.semiFinal[0].length);
 							that.semiFinal[0].push(player[1]);
 							quarterFinalWinnerFound = true;
 						}
 					} else if(quarterCount == 3 || quarterCount == 4) {
 						if(_.where(that.semiFinal[1], {playerId: winnerId}).length < 1) {
-							// console.log('Push in semi final list - ' + that.semiFinal[1].length);
+							console.log('Push in semi final list - ' + that.semiFinal[1].length);
 							that.semiFinal[1].push(player[1]);
 							quarterFinalWinnerFound = true;
 						}
@@ -179,21 +183,23 @@ Board.prototype = {
 				_.each(that.semiFinal, function(playerSet) {
 					_.each(playerSet, function(player) {
 						semiCount++;
-						// console.log((semiCount) + '. Player - ' + player.playerId + ' and winner - ' + winnerId);
+						console.log((semiCount) + '. Player - ' + player.playerId + ' and winner - ' + winnerId);
 						if(player.playerId == winnerId) {
-								// console.log('Push in winners list!');
+								console.log('Push in winners list!');
 							if(_.where(that.finalGame, {playerId: winnerId}).length < 1) {
-								// console.log('Winner not exists - Push in winners list!');
+								console.log('Winner not exists - Push in winners list!');
 								that.finalGame.push(player);
+
+								semiFinalWinnerFound = true;
+
 								if (that.finalGame.length > 0) {
-									// console.log(that.finalGame[0]);
-									// console.log("hi all");
-									// console.log(that.finalGame[0].isDummy);
+									console.log(that.finalGame[0]);
 									if (that.finalGame[0].isDummy) {
 										if (that.finalGame.length > 1) {
 											if (that.finalGame[1].isDummy) {
 												var finalWinner = that.finalGame[0].playerId;
-												// console.log(winnerId);
+												console.log("hi Pool");
+												console.log(winnerId);
 												setTimeout(function(){
 													  that.gameOver(finalWinner, "final", function(){});
 
@@ -224,7 +230,7 @@ Board.prototype = {
 			cb();
 		}
 		if(!callbackSent) {
-			console.error('Callbeck not sent from Game Over, Stage - ' + stage);
+			console.error('Callback not sent from Game Over, Stage - ' + stage);
 		}
 
 	},
