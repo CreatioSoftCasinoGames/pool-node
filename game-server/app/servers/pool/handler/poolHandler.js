@@ -277,6 +277,18 @@ Handler.prototype = {
 		});	
 	},
 
+
+	// sendPlayerDetails: function(msg, session, next) {
+	// 	console.log(msg);
+	// 	var that = this;
+	// 	that.getPlayerAndChannel(session, function(player, channel) {
+	// 		// that.generalProgress(channel, session.uid, msg);
+	// 		next(null, {
+	// 			success: true
+	// 		})	
+	// 	});
+	// },
+
 }
 
 

@@ -223,7 +223,7 @@ PoolRemote.prototype = {
     			if(!!data && !!data.player_server_id) {
     				sid = data.player_server_id;
 
-    				
+
     				msg = {};
     				msg.quarterFinal = board.quarterFinal;
 						msg.semiFinal = board.semiFinal;
@@ -239,17 +239,9 @@ PoolRemote.prototype = {
     					msg.semiFinal = [];
     				}
 
-
-
-
 						msg.finalGame = board.finalGame;
-						console.log(msg);
 						channel.pushMessage("addPlayer", msg);
     				// that.sendMessageToUser(player.playerId, sid, msg);
-    				
-
-
-
 
     			}
     		})
@@ -278,16 +270,18 @@ PoolRemote.prototype = {
     				}
 						
 						msg.finalGame = board.finalGame;
-    				// that.sendMessageToUser(player.playerId, sid, msg);
+    				that.sendMessageToUser(player.playerId, sid, msg);
     			}
     		})
     	});
 		});
+
+		board.eventEmitter.on("tournamentWinner", function(){
+			console.log(board.finalwinner);
+			channel.pushMessage("tournamentWinner", board.finalGameWinner )
+		});
 		
 	},
-
-
-
 	
 
 
