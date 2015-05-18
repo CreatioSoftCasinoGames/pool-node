@@ -68,7 +68,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
   $scope.getMessage = function() {
-    window.pomelo.request("pool.poolHandler.getMessage", {messageId: 1}, function(data) {
+    window.pomelo.request("pool.poolHandler.getMessage", {messageId: 3}, function(data) {
       console.log(data)
     });
   };

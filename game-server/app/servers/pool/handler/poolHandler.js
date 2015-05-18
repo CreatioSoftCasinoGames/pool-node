@@ -58,16 +58,6 @@ Handler.prototype = {
 		})	
 	},
 
-	standUp: function(msg, session, next) {
-		console.log("I am in handler");
-		var that = this;
-		that.app.rpc.pool.poolRemote.kick(session, session.uid, that.app.get('serverId'), session.get('clubId'), function() {
-			next(null, {
-				success: true
-			})
-		});
-	},
-
 	general: function(msg, session, next) {
 		console.log(msg);
 		var that = this;

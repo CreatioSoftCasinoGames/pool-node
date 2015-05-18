@@ -191,10 +191,9 @@ PoolRemote.prototype = {
 												}
 												
 											});
-										},7000);
+										},1000);
 								  },1000) 
 								}
-
 
 								if (responseData.isDummy == true){
 									redis.sadd("busy_bots", responseData.opponentId,  function(err, data){
@@ -456,9 +455,6 @@ PoolRemote.prototype = {
 
 
   kick: function(uid, sid, clubId, cb) {
-  	console.log(uid);
-  	console.log(sid);
-  	console.log(clubId);
 
 		var channel = this.channelService.getChannel(clubId, false),
 				redis 	= this.app.get("redis");

@@ -23,13 +23,15 @@ handler.getConnector = function(msg, session, next) {
 	  if (msg.loginType == "registration") {
 	    var createNewUser = Math.random().toString(36).slice(2) + Math.random().toString(16).slice(2);
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: createNewUser, first_name: msg.playerName }, self.app, function(user) {
-	      self.getHostAndPort({user: user, connectors: connectors, redis: redis }, function(data) {
+	      self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data) {
 	        next(null, data);
 	      })
 	    })
     } else {
+    	console.log('++++++')
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.device_id, first_name: msg.playerName }, self.app, function(user) {
-	      self.getHostAndPort({user: user, connectors: connectors, redis: redis }, function(data) {
+	    	console.log(user);
+	      self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data) {
 	        next(null, data);
 	      })
 	    })
@@ -39,7 +41,7 @@ handler.getConnector = function(msg, session, next) {
 		lastName = !!msg.last_name ? msg.last_name : 'User';
 		emailId = !!msg.email ? msg.email : null;
 		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user){
-			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
+			self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data){
 		  	next(null,data);
 		  })
 		})
@@ -48,7 +50,7 @@ handler.getConnector = function(msg, session, next) {
 		lastName = !!msg.last_name ? msg.last_name : 'User';
 		emailId = !!msg.email ? msg.email : null;
 		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user) {
-			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
+			self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data){
 		  	next(null,data);
 		  })
 		})
@@ -94,23 +96,24 @@ handler.getConnector = function(msg, session, next) {
 },
 
 handler.getHostAndPort = function(msg, next) {
+	// console.log(msg);
 	var hostAndPort = this.app.sessionService.service.sessions
-	for (first in hostAndPort) {
-		var ipAddress = this.app.sessionService.service.sessions[first].__socket__.remoteAddress.ip
-		console.log(ipAddress)
-		break;
-	}	
+	// for (first in hostAndPort) {
+	// 	var ipAddress = this.app.sessionService.service.sessions[first].__socket__.remoteAddress.ip
+	// 	console.log(ipAddress)
+	// 	break;
+	// }	
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
-    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "yoursIp", ipAddress, "device_avatar_id", parseInt(msg.user.device_avatar_id ))
+    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "yoursIp", msg.ip, "device_avatar_id", parseInt(msg.user.device_avatar_id ))
     next({
       code: 200,
       host: res.host,
       port: res.clientPort,
       user: msg.user,
       loginSuccess: true,
-      yoursIp: ipAddress
+      yoursIp: msg.ip
     });
   }
 },
