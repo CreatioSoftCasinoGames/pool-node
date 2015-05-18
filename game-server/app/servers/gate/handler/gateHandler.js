@@ -13,25 +13,22 @@ var Handler = function(app) {
 var handler = Handler.prototype;
 
 handler.getConnector = function(msg, session, next) {
-	console.log(msg);
-	var self = this;
-	var redis = self.app.get("redis");
-	var connectors = this.app.getServersByType('connector');
-  var getProfileRoute = "/api/v1/sessions.json"
+
+	var self 						= this,
+			redis 					= self.app.get("redis"),
+			connectors 			= this.app.getServersByType('connector'),
+			getProfileRoute = "/api/v1/sessions.json";
 
 	if (msg.is_guest && !!msg.loginType) {
 	  if (msg.loginType == "registration") {
 	    var createNewUser = Math.random().toString(36).slice(2) + Math.random().toString(16).slice(2);
-	    // console.log(createNewUser);
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: createNewUser, first_name: msg.playerName }, self.app, function(user) {
-	      // console.log(user);
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis }, function(data) {
 	        next(null, data);
 	      })
 	    })
     } else {
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.device_id, first_name: msg.playerName }, self.app, function(user) {
-	      // console.log(user);
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis }, function(data) {
 	        next(null, data);
 	      })
@@ -41,24 +38,16 @@ handler.getConnector = function(msg, session, next) {
   	firstName = !!msg.first_name ? msg.first_name : 'Guest';
 		lastName = !!msg.last_name ? msg.last_name : 'User';
 		emailId = !!msg.email ? msg.email : null;
-		console.log(firstName );
-		console.log(lastName );
-		console.log(emailId );
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user) {
-			console.log(user);
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user){
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })
 		})
-	} else if(!!msg.fb_id && !!msg.fb_friends_list && !!msg.device_id) {
+	} else if(!!msg.fb_id && !!msg.device_id) {
 		firstName = !!msg.first_name ? msg.first_name : 'Guest';
 		lastName = !!msg.last_name ? msg.last_name : 'User';
 		emailId = !!msg.email ? msg.email : null;
-		console.log(firstName );
-		console.log(lastName );
-		console.log(emailId );
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.friend_list, device_id: msg.device_id}, self.app, function(user) {
-			// console.log(user);
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user) {
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
 		  	next(null,data);
 		  })
@@ -105,8 +94,6 @@ handler.getConnector = function(msg, session, next) {
 },
 
 handler.getHostAndPort = function(msg, next) {
-	// console.log(msg);
-	// console.log(msg.user.device_avatar_id);
 	var hostAndPort = this.app.sessionService.service.sessions
 	for (first in hostAndPort) {
 		var ipAddress = this.app.sessionService.service.sessions[first].__socket__.remoteAddress.ip
@@ -115,7 +102,6 @@ handler.getHostAndPort = function(msg, next) {
 	}	
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
-    console.log(res);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
     msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "yoursIp", ipAddress, "device_avatar_id", parseInt(msg.user.device_avatar_id ))
     next({

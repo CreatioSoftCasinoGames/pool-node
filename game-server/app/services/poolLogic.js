@@ -224,7 +224,7 @@ Board.prototype = {
 			}
 		} else if (stage == "final") {
 
-			if (finalGame[0].playerId == winnerId || finalGame[1].playerId == winnerId) {
+			if (that.finalGame[0].playerId == winnerId || that.finalGame[1].playerId == winnerId) {
 				that.eventEmitter.emit("tournamentWinner");
 			}
 
@@ -263,6 +263,49 @@ Board.prototype = {
 		if(that.playersToAdd.length >= 2) {
 			console.log("Game will start here !");
 		}
+	},
+
+	getMessage: function(messageId, cb) {
+		var success = true,
+				message = "";
+
+		if (messageId == 1) {
+			message = "Awaiting Player ...";
+		}else if (messageId == 2)  {
+			message = "Game In Progress ...";
+		}else if (messageId == 3) {
+			message = "Prateek Wins ! ";
+		}else if (messageId == 4)  {
+			message = "It's my break !";
+		}else if (messageId == 5) {
+			message = "I am on stripes ";
+		}else if (messageId == 6)  {
+			message = " I am on Solids ";
+		}else if (messageId == 7) {
+			message = "7 balls left";
+		}else if (messageId == 8)  {
+			message = "6 balls left";
+		}else if (messageId == 9) {
+			message = "5 balls left";
+		}else if (messageId == 10)  {
+			message = "4 balls left";
+		}else if (messageId == 11) {
+			message = "3 balls left";
+		}else if (messageId == 12)  {
+			message = "2 balls left";
+		}else if (messageId == 13) {
+			message = "1 ball left";
+		}else if (messageId == 14)  {
+			message = " On Black Ball";
+		}else if (messageId == 15) {
+			message = "Missed my shot ";
+		} else {
+			success = false
+		}
+		cb({
+			success: success,
+			message: message
+		});
 	},
 
 	getBotPlayerName: function(type, cb) {
@@ -311,19 +354,3 @@ var Player = function(playerId, isDummy, redis, cb) {
 };
 
 exports.Board = Board;
-
-
-
-
-
-
-
-
-
-
-// if (finalWinner) {
-// 	console.log("final winner is there");
-// 	that.eventEmitter.emit("gameOver");
-// 	callbackSent = true;
-// 	cb();
-// };|| finalGame[1].playerId == winnerId

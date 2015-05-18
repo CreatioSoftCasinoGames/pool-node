@@ -79,12 +79,8 @@ Handler.prototype.enter= function(msg, session, next) {
 
 
 Handler.prototype.joinClub=function(msg, session, next) {
-	// console.log(msg);
-	// console.log(session);
   var that = this;
   var board = null;
-  console.log('Sesssion - ' + session.uid);
-  console.log(that.app.get('serverId'));
   that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
     session.set("clubConfigId", msg.clubConfigId);
     session.set("clubId", data.clubId);

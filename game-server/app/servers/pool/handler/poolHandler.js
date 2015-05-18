@@ -89,8 +89,6 @@ Handler.prototype = {
 		});
 	},
 
-	
-
 	getOnlinePlayers: function(msg, session, next) {
     var that = this;
     var redis = that.app.get("redis");
@@ -135,7 +133,6 @@ Handler.prototype = {
 
 	updateProfile: function(msg, session, next){
 		var that = this;
-		// console.log(msg);
 
 		if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
 			dbLogger.updateGame({playerId: session.uid,
@@ -219,9 +216,6 @@ Handler.prototype = {
 		});		
 	},
 
-
-
-
 	gameOver: function(msg, session, next) {
 		console.log(msg);
 		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
@@ -231,18 +225,12 @@ Handler.prototype = {
 			});
 			return;
 		}
-		if(!msg.stage || msg.stage == "null" || msg.stage == ""){
-			console.error('Parameters mismatch!');
-			next(null, {
-				msg: "stage not found !"
-			});
-			return;
-		}
+
 		var that 			= this,
-			redis 		= that.app.get("redis"),
-			winnerId 	= msg.winnerId,
-			stage 		= msg.stage,
-			clubId 		=	null;
+				redis 		= that.app.get("redis"),
+				winnerId 	= msg.winnerId,
+				stage 		= msg.stage,
+				clubId 		=	null;
 
 		that.getPlayerAndChannel(session, function(player, channel) {
 			if(!!player && !!channel) {
@@ -260,6 +248,13 @@ Handler.prototype = {
 					channel.board.players = [];
 					next();
 				} else {
+					if(!msg.stage || msg.stage == "null" || msg.stage == ""){
+						console.error('Parameters mismatch!');
+						next(null, {
+							msg: "stage not found !"
+						});
+						return;
+					}
 					channel.board.gameOver(winnerId, stage, function(data) {
 						next(null,{
 							success: true,
@@ -277,17 +272,32 @@ Handler.prototype = {
 		});	
 	},
 
-
-	// sendPlayerDetails: function(msg, session, next) {
-	// 	console.log(msg);
-	// 	var that = this;
-	// 	that.getPlayerAndChannel(session, function(player, channel) {
-	// 		// that.generalProgress(channel, session.uid, msg);
-	// 		next(null, {
-	// 			success: true
-	// 		})	
-	// 	});
-	// },
+	getMessage: function(msg, session, next) {
+		if(!!msg.messageId && msg.messageId != "") {
+			this.getPlayerAndChannel(session, function(player, channel) {
+				channel.board.getMessage(parseInt(msg.messageId), function(message){
+					if(message.success && message.message != "") {
+						next(null, {
+							success: true,
+							message: message.message
+						});
+					} else {
+						console.error('Message for this message id does not exists!');
+						next(null,{
+							success: false,
+							message: 'Message for this message id does not exists!'
+						});
+					}
+				});	
+			});
+		} else {
+			console.error('Key messageId not found!');
+			next(null,{
+				success: false,
+				message: 'Key messageId not found!'
+			});
+		}
+	},
 
 }
 
