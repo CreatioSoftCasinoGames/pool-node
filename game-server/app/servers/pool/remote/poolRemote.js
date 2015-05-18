@@ -17,9 +17,9 @@ var PoolRemote = function(app) {
 PoolRemote.prototype = {
 
 	findClub:function(clubConfigId, cb) {
-		var that = this;
+		var that 			= this;
         freeClubs = false,
-				redis = that.app.get("redis");
+				redis 		= that.app.get("redis");
 
       redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
       	if(!!typeData) {
@@ -27,12 +27,18 @@ PoolRemote.prototype = {
 	      		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
 							if(data.length!=0) {
 								freeClubs = true;
-								cb(parseInt(data[0].split(":")[1]));
+								cb({
+									success: true,
+									clubId: parseInt(data[0].split(":")[1])
+								});
 							} else if(data.length == 0 || !freeClubs) {
 								backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
 									if(data.valid) {
 										redisUtil.createClub(data.club, redis);
-										cb(parseInt(data.club.id));
+										cb({
+											success: true,
+											clubId: parseInt(data.club.id)
+										});
 									}
 								})
 						  }
@@ -44,15 +50,21 @@ PoolRemote.prototype = {
 	      					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, incValue){
 	      						if(data.length!=0) {
 											freeClubs = true;
-											cb(parseInt(data[0].split(":")[1]));
-											} else if(data.length == 0 || !freeClubs) {
-												backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
-													if(data.valid) {
-														redisUtil.createClub(data.club, redis);
-														cb(parseInt(data.club.id));
-													}
-												})
-										  }
+											cb({
+												success: true,
+												clubId: parseInt(data[0].split(":")[1])
+											});
+										} else if(data.length == 0 || !freeClubs) {
+											backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
+												if(data.valid) {
+													redisUtil.createClub(data.club, redis);
+													cb({
+														success: true,
+														clubId: parseInt(data.club.id)
+													});
+												}
+											});
+									  }
 	      					});		
 	      				});
 		          });
@@ -60,6 +72,9 @@ PoolRemote.prototype = {
 			    }
       	} else {
       		console.error('No clubs found, Please sync the database!');
+      		cb({
+      			success: false
+      		})
       	}
 		  });
 
@@ -67,8 +82,16 @@ PoolRemote.prototype = {
   
 	add: function(uid, sid, clubConfigId, playerIp, flag, cb) {
 		var that = this;
-		that.findClub(clubConfigId, function(clubId) {
-			that.addToClub(uid, sid, clubConfigId, clubId, flag, false, playerIp, cb);
+		that.findClub(clubConfigId, function(clubData) {
+			if(clubData.success) {
+				that.addToClub(uid, sid, clubConfigId, parseInt(clubData.clubId), flag, false, playerIp, cb);
+			} else {
+				console.error('No clubs found, Create or Sync database!');
+				cb({
+					success: false,
+					message: 'No clubs found, Create or Sync database!'
+				})
+			}
 		});
 	},
 
@@ -86,11 +109,15 @@ PoolRemote.prototype = {
 
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
-			redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
-				var onlinePlayers = !!data1 ? parseInt(data1) : 0;
-		    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
-			  });
-			});
+			if(!!clubData) {
+				redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+					var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+			    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers+1, function(err, data){
+				  });
+				});
+			} else {
+				console.error('Redis details for this club - ' + clubId + ' not found!')
+			}
 
 			redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
 			  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
@@ -164,8 +191,8 @@ PoolRemote.prototype = {
 												}
 												
 											});
-										},500);
-								  },500) 
+										},7000);
+								  },1000) 
 								}
 
 
@@ -218,65 +245,49 @@ PoolRemote.prototype = {
 				board = channel.board,
 				redis = that.app.get('redis');
 		board.eventEmitter.on("addPlayer", function() {
-    	_.each(board.players, function(player) {
-    		redis.hgetall("game_player:"+player.playerId, function(err, data) {
-    			if(!!data && !!data.player_server_id) {
-    				sid = data.player_server_id;
-
-
-    				msg = {};
-    				msg.quarterFinal = board.quarterFinal;
-						msg.semiFinal = board.semiFinal;
-
-						
-    				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
-    					msg.semiFinal = [[]]
-							msg.semiFinal[0] = msg.semiFinal[1];
-						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
-							msg.semiFinal = [[]]
-							msg.semiFinal[1] = msg.semiFinal[0];
-						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
-    					msg.semiFinal = [];
-    				}
-
-						msg.finalGame = board.finalGame;
-						channel.pushMessage("addPlayer", msg);
-    				// that.sendMessageToUser(player.playerId, sid, msg);
-
-    			}
-    		})
-    	});
+			msg = {};
+			msg.quarterFinal = board.quarterFinal;
+			msg.semiFinal = board.semiFinal;
+			if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+				msg.semiFinal = [[]]
+				msg.semiFinal[0] = msg.semiFinal[1];
+			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+				msg.semiFinal = [[]]
+				msg.semiFinal[1] = msg.semiFinal[0];
+			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+				msg.semiFinal = [];
+			}
+			msg.finalGame = board.finalGame;
+			channel.pushMessage("addPlayer", msg);
 		});
 
 		board.eventEmitter.on("gameOver", function() {
-    	_.each(board.players, function(player) {
-    		redis.hgetall("game_player:"+player.playerId, function(err, data) {
-    			if(!!data && !!data.player_server_id) {
-    				sid = data.player_server_id;
-    				msg = {};
-    				msg.quarterFinal = board.quarterFinal;
-    				msg.semiFinal = board.semiFinal;
-    				
-    				if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
-    					msg.semiFinal = [[]]
-							msg.semiFinal[0] = board.semiFinal[1];
-						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
-							msg.semiFinal = [[]]
-							msg.semiFinal[0] = board.semiFinal[0];
-						} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
-    					msg.semiFinal = [];
-    				}
-						
-						msg.finalGame = board.finalGame;
-    				that.sendMessageToUser(player.playerId, sid, msg);
-    			}
-    		})
-    	});
+			msg = {};
+			msg.quarterFinal = board.quarterFinal;
+			msg.semiFinal = board.semiFinal;
+			if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+				msg.semiFinal = [[]]
+				msg.semiFinal[0] = board.semiFinal[1];
+			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+				msg.semiFinal = [[]]
+				msg.semiFinal[0] = board.semiFinal[0];
+			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+				msg.semiFinal = [];
+			}
+			msg.finalGame = board.finalGame;
+
+    	// _.each(board.players, function(player) {
+    	// 	redis.hgetall("game_player:"+player.playerId, function(err, data) {
+    	// 		if(!!data && !!data.player_server_id) {
+    	// 			sid = data.player_server_id;
+    	// 			that.sendMessageToUser(player.playerId, sid, msg);
+    	// 		}
+    	// 	})
+    	// });
 		});
 
 		board.eventEmitter.on("tournamentWinner", function(){
-			console.log(board.finalGameWinner);
-			board.finalGameWinner = _.omit(board.finalGameWinner, 'playerId', 'isDummy', 'playerIp', 'isServer');
+			board.finalGameWinner = _.omit(board.finalGameWinner, 'isDummy', 'playerIp', 'isServer');
 			channel.pushMessage("tournamentWinner", board.finalGameWinner )
 		});
 		
@@ -445,16 +456,19 @@ PoolRemote.prototype = {
 
 
   kick: function(uid, sid, clubId, cb) {
-  	console.log("I am in remote");
-		var channel = this.channelService.getChannel(clubId, false);
-		var redis = this.app.get("redis");
-		channel.add(uid, sid);
-		if( !!channel) {
+  	console.log(uid);
+  	console.log(sid);
+  	console.log(clubId);
+
+		var channel = this.channelService.getChannel(clubId, false),
+				redis 	= this.app.get("redis");
+
+		if(!!channel) {
+			console.log('Player is going to leave !')
 			channel.leave(uid, sid);
 		} else {
 			console.error("channel not found");
-		}
-			
+		}	
 		cb()
 	},
 

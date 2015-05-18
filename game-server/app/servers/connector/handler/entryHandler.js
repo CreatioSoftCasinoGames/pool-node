@@ -110,6 +110,15 @@ Handler.prototype.sendMessage= function(msg, session, next) {
 	// })
 };
 
+Handler.prototype.standUp= function(msg, session, next) {
+	var that = this;
+	that.app.rpc.pool.poolRemote.kick(session, session.uid, that.app.get('serverId'), session.get('clubId'), function() {
+		next(null, {
+			success: true
+		})
+	});
+};
+
 var onUserLeave = function(app, session) {
 	if(!session || !session.uid) {
 		return;
