@@ -58,9 +58,21 @@ Handler.prototype = {
 		})	
 	},
 
+	standUp: function(msg, session, next) {
+		console.log("I am in handler");
+		var that = this;
+		that.app.rpc.pool.poolRemote.kick(session, session.uid, that.app.get('serverId'), session.get('clubId'), function() {
+			next(null, {
+				success: true
+			})
+		});
+	},
+
 	general: function(msg, session, next) {
+		console.log(msg);
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
+			console.log(channel);
 			that.generalProgress(channel, session.uid, msg);
 			next(null, {
 				success: true
@@ -77,37 +89,28 @@ Handler.prototype = {
 		});
 	},
 
-	
-
 	getOnlinePlayers: function(msg, session, next) {
     var that = this;
-    that.getPlayerAndChannel(session, function(player, channel) {
-      if (!!channel) {
-        if (msg.gameType == "OneToOne") {
-          channel.board.redis.smembers("onetoone_room_players", function(err, data) {
-            that.getPlayerOnline({data: data, redis: channel.board.redis}, function(onlinePlayer) {
-              next(null, {
-                success: true,
-                onlinePlayer: onlinePlayer
-              })
-            });
+    var redis = that.app.get("redis");
+    if (msg.gameType == "OneToOne") {
+      redis.smembers("onetoone_room_players", function(err, data) {
+        that.getPlayerOnline({data: data, redis: redis}, function(onlinePlayer) {
+          next(null, {
+            success: true,
+            onlinePlayer: onlinePlayer
           })
-        }else {
-          channel.board.redis.smembers("tournament_room_players", function(err, data) {
-            that.getPlayerOnline({data: data, redis: channel.board.redis}, function(onlinePlayer) {
-              next(null, {
-                success: true,
-                onlinePlayer: onlinePlayer
-              })
-            })
-          });
-        }
-      } else {
-        next(null, {
-          success: false
+        });
+      })
+    }else {
+      redis.smembers("tournament_room_players", function(err, data) {
+        that.getPlayerOnline({data: data, redis: redis}, function(onlinePlayer) {
+          next(null, {
+            success: true,
+            onlinePlayer: onlinePlayer
+          })
         })
-      }
-    });
+      });
+    }
   },
 
   getPlayerOnline: function(msg, next) {
@@ -118,7 +121,7 @@ Handler.prototype = {
         totalData++;
         onlinePlayer.push({
           clubId: clubId.split(":")[1],
-          player: !!playerCount ? playerCount : 0
+          player: !!playerCount ? parseInt(playerCount) : 0
         });
         if (totalData == msg.data.length) {
           next(onlinePlayer);
@@ -129,33 +132,63 @@ Handler.prototype = {
 
 
 	updateProfile: function(msg, session, next){
-		var that = this
-		if (msg.ball_potted){
-			dbLogger.updateGame({playerId: session.uid, ball_potted:  msg.ball_potted})
+		var that = this;
+
+		if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
+			dbLogger.updateGame({playerId: session.uid,
+			                     win_streak:  msg.win_streak,
+                           total_coins_won:  msg.total_coins_won,
+                           win_percentage:  msg.win_percentage,
+                           won_count:  msg.won_count,
+                           xp:  msg.xp,
+                           current_coins_balance: msg.current_coins_balance 
+			                   })
+		}else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0) && (msg.accuracy || msg.accuracy == 0)) {
+			dbLogger.updateGame({playerId: session.uid,
+				                   ball_potted:  msg.ball_potted,
+				                   strike_count: msg.strike_count,
+				                   accuracy: msg.accuracy
+			                   })
+
+		}else if ((msg.total_coins_won || msg.total_coins_won == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0)){
+		  dbLogger.updateGame({playerId: session.uid,
+			                     total_coins_won:  msg.total_coins_won,
+		                       current_coins_balance:  msg.current_coins_balance
+		                     })	
+
+		}else if(msg.total_coins_won || msg.total_coins_won == 0){
+			dbLogger.updateGame({playerId: session.uid,
+			                     total_coins_won:  msg.total_coins_won
+			                   })
+
+		
+    }else if(msg.device_avatar_id){
+			dbLogger.updateGame({playerId: session.uid, device_avatar_id:  msg.device_avatar_id})
+
 		}else if (msg.total_coins_won){
 			dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
-    }else if (msg.accuracy){
-			dbLogger.updateGame({playerId: session.uid, accuracy:  msg.accuracy})
-		}else if (msg.win_percentage){
-			dbLogger.updateGame({playerId: session.uid, win_percentage:  msg.win_percentage})
-		}else if (msg.xp){
-			dbLogger.updateGame({playerId: session.uid, xp:  msg.xp})
+
+		}else if (msg.current_coins_balance){
+			dbLogger.updateGame({playerId: session.uid, current_coins_balance:  msg.current_coins_balance})	
+
 		}else if (msg.total_games_played){
 			dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
+
 		}else if (msg.rank){
 			dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
+
 		}else if (msg.total_time_in_game){
 			dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
-		}else if (msg.win_streak){
-			dbLogger.updateGame({playerId: session.uid, win_streak:  msg.win_streak})
+
 		}else if (msg.current_level){
 			dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
+
 		}else if (msg.flag){
 			dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
+			
 		}else if (msg.country){
 			dbLogger.updateGame({playerId: session.uid, country:  msg.country})
-		}else if(msg.device_avtar_id){
-			dbLogger.updateGame({playerId: session.uid, device_avtar_id:  msg.device_avtar_id})
+		
 		}
 
 		next();
@@ -183,6 +216,89 @@ Handler.prototype = {
 		});		
 	},
 
+	gameOver: function(msg, session, next) {
+		console.log(msg);
+		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
+			console.error('Parameters mismatch!');
+			next(null, {
+				msg: "Key mismatch !"
+			});
+			return;
+		}
+
+		var that 			= this,
+				redis 		= that.app.get("redis"),
+				winnerId 	= msg.winnerId,
+				stage 		= msg.stage,
+				clubId 		=	null;
+
+		that.getPlayerAndChannel(session, function(player, channel) {
+			if(!!player && !!channel) {
+				clubId = channel.board.clubId;
+				//Remove these players from online count
+	      redis.hgetall("club:"+clubId, function(err, clubData) {
+					redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
+						var onlinePlayers = !!data1 ? parseInt(data1) : 0;
+				    redis.set("onlinePlayer:"+clubData.club_config_id, onlinePlayers-2, function(err, data){
+					  });
+					});
+				});
+
+				if(channel.board.clubType == "OneToOne"){
+					channel.board.players = [];
+					next();
+				} else {
+					if(!msg.stage || msg.stage == "null" || msg.stage == ""){
+						console.error('Parameters mismatch!');
+						next(null, {
+							msg: "stage not found !"
+						});
+						return;
+					}
+					channel.board.gameOver(winnerId, stage, function(data) {
+						next(null,{
+							success: true,
+							message: 'Tournament fixture sent!'
+						});
+					});
+				}
+			} else {
+				console.error('Player or channel not found!');
+				next(null, {
+					success: false,
+					message: 'Player or channel not found!'
+				})
+			}
+		});	
+	},
+
+	getMessage: function(msg, session, next) {
+		if(!!msg.messageId && msg.messageId != "") {
+			this.getPlayerAndChannel(session, function(player, channel) {
+				channel.board.getMessage(parseInt(msg.messageId), function(message){
+					if(message.success && message.message != "") {
+						next(null, {
+							success: true,
+							message: message.message
+						});
+					} else {
+						console.error('Message for this message id does not exists!');
+						next(null,{
+							success: false,
+							message: 'Message for this message id does not exists!'
+						});
+					}
+				});	
+			});
+		} else {
+			console.error('Key messageId not found!');
+			next(null,{
+				success: false,
+				message: 'Key messageId not found!'
+			});
+		}
+	},
 
 }
+
 
