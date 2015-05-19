@@ -318,11 +318,21 @@ PoolRemote.prototype = {
 							redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 								redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 									redis.hgetall("game_player:"+playerList[0], function(err, player) {
-                    that.returnData(msg.playerId, playerList[0], player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
-                       // console.log(data);
-                       // console.log('1');
-                       next(data)
-                    })
+
+
+
+										backendFetcher.get("/api/v1/users/"+ msg.playerId +".json", {}, that.app, function(newPlayer) {
+											console.log(newPlayer);
+
+
+	                    that.returnData(msg.playerId, playerList[0], newPlayer.player_name, newPlayer.player_xp, newPlayer.player_level, newPlayer.player_image, newPlayer.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
+	                    //    // console.log(data);
+	                    //    // console.log('1');
+	                       next(data)
+	                    })
+
+	                  });
+
 									});
 								});
 							});
@@ -345,12 +355,27 @@ PoolRemote.prototype = {
 										redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 											redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 												redis.hgetall("game_player:"+playerList[0], function(err, player) {
-													that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
+
+													backendFetcher.get("/api/v1/users/"+ msg.playerId +".json", {}, that.app, function(newPlayer) {
+														console.log(newPlayer);
+
+
+				                    that.returnData(msg.playerId, playerList[0], newPlayer.player_name, newPlayer.player_xp, newPlayer.player_level, newPlayer.player_image, newPlayer.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
+				                    // console.log(data);
+		                        // console.log('2');
+				                      next(data)
+				                    })
+				                  });
+
+
+													// that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
 		                        // console.log(data);
 		                        // console.log('2');
-		                        next(data)
-		                      })
+		                        // next(data)
+		                      // })
 												});
+
+
 											});
 										});
 									});
@@ -405,6 +430,21 @@ PoolRemote.prototype = {
 												if(!!playerDetails) {
 													redis.hgetall("game_player:"+playerDetails.opponentId, function(err, opponentDetails) {
 														if(!!opponentDetails) {
+
+
+
+
+
+															// backendFetcher.get("/api/v1/users/"+ msg.playerId +".json", {}, that.app, function(newPlayer) {
+															// 	console.log(newPlayer);
+
+
+										         //  that.returnData(msg.playerId, playerList[0], newPlayer.player_name, newPlayer.player_xp, newPlayer.player_level, newPlayer.player_image, newPlayer.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
+										         //   next(data)
+										         //   })
+										         //  });
+
+
 															that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  opponentDetails.player_ip, false, false, parseInt(opponentDetails.device_avatar_id), function(data){
 					                      next(data);
 							                });

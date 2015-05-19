@@ -28,9 +28,7 @@ handler.getConnector = function(msg, session, next) {
 	      })
 	    })
     } else {
-    	console.log('++++++')
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.device_id, first_name: msg.playerName }, self.app, function(user) {
-	    	console.log(user);
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data) {
 	        next(null, data);
 	      })

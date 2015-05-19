@@ -214,11 +214,14 @@ Board.prototype = {
 								}
 							}
 						}
-						if(semiCount >= that.semiFinal[0].length + that.semiFinal[1].length) {
-							that.eventEmitter.emit("gameOver");
-							callbackSent = true;
-							cb();
+						if (semiFinalWinnerFound) {
+							if(semiCount >= that.semiFinal[0].length + that.semiFinal[1].length) {
+								that.eventEmitter.emit("gameOver");
+								callbackSent = true;
+								cb();
+							}
 						}
+							
 					});
 				});
 			}
