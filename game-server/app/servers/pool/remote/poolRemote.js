@@ -128,15 +128,15 @@ PoolRemote.prototype = {
 			  			channel.board = new poolLogic.Board(clubId, redis, clubType);
 			  		  that.addEventListers(channel);
 			  		  channel.board.addPlayer(uid, false);
-			  		  channel.board.quarterFinal = [];
-				  		channel.board.semiFinal = [[], []];
-				  		channel.board.finalGame = [];
+			  		 //  channel.board.quarterFinal = [];
+				  		// channel.board.semiFinal = [[], []];
+				  		// channel.board.finalGame = [];
 			  	}else{
 			  		channel.board.addPlayer(uid, false);
 			  		that.addEventListers(channel);
-			  		channel.board.quarterFinal = [];
-			  		channel.board.semiFinal = [[], []];
-			  		channel.board.finalGame = [];
+			  		// channel.board.quarterFinal = [];
+			  		// channel.board.semiFinal = [[], []];
+			  		// channel.board.finalGame = [];
 			  	}
 			  	
 			  	//Get opponenet
@@ -192,7 +192,7 @@ PoolRemote.prototype = {
 												
 											});
 										},1000);
-								  },1000) 
+								  },4000) 
 								}
 
 								if (responseData.isDummy == true){
@@ -270,24 +270,19 @@ PoolRemote.prototype = {
 			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
 				msg.semiFinal = [[]]
 				msg.semiFinal[0] = board.semiFinal[0];
-			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+			} else if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length <= 0)) {
 				msg.semiFinal = [];
 			}
 			msg.finalGame = board.finalGame;
-
-    	// _.each(board.players, function(player) {
-    	// 	redis.hgetall("game_player:"+player.playerId, function(err, data) {
-    	// 		if(!!data && !!data.player_server_id) {
-    	// 			sid = data.player_server_id;
-    	// 			that.sendMessageToUser(player.playerId, sid, msg);
-    	// 		}
-    	// 	})
-    	// });
+			channel.pushMessage("addPlayer", msg);
 		});
 
 		board.eventEmitter.on("tournamentWinner", function(){
 			board.finalGameWinner = _.omit(board.finalGameWinner, 'isDummy', 'playerIp', 'isServer');
 			channel.pushMessage("tournamentWinner", board.finalGameWinner )
+			board.quarterFinal 	= [];
+			board.semiFinal 			= [];
+			board.finalGame 			= [];
 		});
 		
 	},
@@ -302,11 +297,7 @@ PoolRemote.prototype = {
 		  	quarterFinal 	= msg.channel.board.quarterFinal,
 		  	clubType 			= msg.channel.board.clubType;
 
-		// console.log(quarterFinal.length);
-
 		redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
-			// console.log(err);
-			// console.log(playerList);
 			playerList = _.without(playerList, msg.playerId); //Remove the current player from list
 			if(playerList.length > 0 && !opponentFound) {
 				opponentFound = true;
@@ -318,21 +309,12 @@ PoolRemote.prototype = {
 							redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 								redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 									redis.hgetall("game_player:"+playerList[0], function(err, player) {
-
-
-
-										backendFetcher.get("/api/v1/users/"+ msg.playerId +".json", {}, that.app, function(newPlayer) {
+										backendFetcher.get("/api/v1/users/"+ playerList[0] +".json", {}, that.app, function(newPlayer) {
 											console.log(newPlayer);
-
-
-	                    that.returnData(msg.playerId, playerList[0], newPlayer.player_name, newPlayer.player_xp, newPlayer.player_level, newPlayer.player_image, newPlayer.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
-	                    //    // console.log(data);
-	                    //    // console.log('1');
-	                       next(data)
-	                    })
-
+	                    that.returnData(msg.playerId, playerList[0], newPlayer.full_name, newPlayer.xp, newPlayer.current_level, newPlayer.image_url, player.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
+	                       next(data);
+	                    });
 	                  });
-
 									});
 								});
 							});
@@ -355,27 +337,13 @@ PoolRemote.prototype = {
 										redis.hmset("game_player:"+msg.playerId, "playing", true, "opponentId", playerList[0], function(err, playerLevel) {
 											redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 												redis.hgetall("game_player:"+playerList[0], function(err, player) {
-
-													backendFetcher.get("/api/v1/users/"+ msg.playerId +".json", {}, that.app, function(newPlayer) {
+													backendFetcher.get("/api/v1/users/"+ playerList[0] +".json", {}, that.app, function(newPlayer) {
 														console.log(newPlayer);
-
-
-				                    that.returnData(msg.playerId, playerList[0], newPlayer.player_name, newPlayer.player_xp, newPlayer.player_level, newPlayer.player_image, newPlayer.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
-				                    // console.log(data);
-		                        // console.log('2');
+				                    that.returnData(msg.playerId, playerList[0], newPlayer.full_name, newPlayer.xp, newPlayer.current_level, newPlayer.image_url, player.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
 				                      next(data)
 				                    })
 				                  });
-
-
-													// that.returnData(msg.playerId, playerList[0],  player.player_name, player.player_xp, player.player_level, player.player_image, player.player_ip, false, true, parseInt(player.device_avatar_id), function(data){
-		                        // console.log(data);
-		                        // console.log('2');
-		                        // next(data)
-		                      // })
 												});
-
-
 											});
 										});
 									});
@@ -430,21 +398,7 @@ PoolRemote.prototype = {
 												if(!!playerDetails) {
 													redis.hgetall("game_player:"+playerDetails.opponentId, function(err, opponentDetails) {
 														if(!!opponentDetails) {
-
-
-
-
-
-															// backendFetcher.get("/api/v1/users/"+ msg.playerId +".json", {}, that.app, function(newPlayer) {
-															// 	console.log(newPlayer);
-
-
-										         //  that.returnData(msg.playerId, playerList[0], newPlayer.player_name, newPlayer.player_xp, newPlayer.player_level, newPlayer.player_image, newPlayer.player_ip, false, true, parseInt(newPlayer.device_avatar_id), function(data){
-										         //   next(data)
-										         //   })
-										         //  });
-
-
+															console.log(opponentDetails);
 															that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  opponentDetails.player_ip, false, false, parseInt(opponentDetails.device_avatar_id), function(data){
 					                      next(data);
 							                });
@@ -489,8 +443,7 @@ PoolRemote.prototype = {
   },
 
   sendMessageToUser: function(uid, serverId, msg) {
-   this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, "addPlayer"]}, function(data) {
-   });
+   this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, "addPlayer"]}, function(data) {});
   },
 
 
@@ -500,7 +453,6 @@ PoolRemote.prototype = {
 				redis 	= this.app.get("redis");
 
 		if(!!channel) {
-			console.log('Player is going to leave !')
 			channel.leave(uid, sid);
 		} else {
 			console.error("channel not found");

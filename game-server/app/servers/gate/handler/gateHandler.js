@@ -71,7 +71,7 @@ handler.getConnector = function(msg, session, next) {
 				if(user != null){
 					var res = dispatcher.dispatch(user.id, connectors);
 					redis.sadd("game_players", "game_player:"+user.login_token);
-			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, "device_avatar_id", parseInt(user.device_avatar_id))
+			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_ip", msg.ip, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, "device_avatar_id", parseInt(user.device_avatar_id))
 					next(null, {
 						code: 200,
 						host: res.host,

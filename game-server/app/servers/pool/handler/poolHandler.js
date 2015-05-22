@@ -246,10 +246,13 @@ Handler.prototype = {
 						return;
 					}
 					channel.board.gameOver(winnerId, stage, function(data) {
-						next(null,{
-							success: true,
-							message: 'Tournament fixture sent!'
-						});
+						if (stage != "final"){
+							next(null,{
+								success: true,
+								message: 'Tournament fixture sent!'
+							}); 
+						}
+						
 					});
 				}
 			} else {
@@ -263,10 +266,16 @@ Handler.prototype = {
 	},
 
 	getMessage: function(msg, session, next) {
-		if(!!msg.messageId && msg.messageId != "") {
+		if((!!msg.messageId && msg.messageId != "") &&  !!msg.playerId && (!!msg.stage && msg.stage != "")) {
 			this.getPlayerAndChannel(session, function(player, channel) {
 				channel.board.getMessage(parseInt(msg.messageId), function(message){
 					if(message.success && message.message != "") {
+						channel.pushMessage("tournamentMessage", {
+							playerId 	: msg.playerId,
+							messageId : msg.messageId,
+							message 	: message.message,
+							stage 		: msg.stage
+						})
 						next(null, {
 							success: true,
 							message: message.message
@@ -281,10 +290,10 @@ Handler.prototype = {
 				});	
 			});
 		} else {
-			console.error('Key messageId not found!');
+			console.error('Key is missing or mismatched!');
 			next(null,{
 				success: false,
-				message: 'Key messageId not found!'
+				message: 'Key is missing or mismatched!'
 			});
 		}
 	},
