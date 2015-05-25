@@ -128,15 +128,20 @@ PoolRemote.prototype = {
 			  			channel.board = new poolLogic.Board(clubId, redis, clubType);
 			  		  that.addEventListers(channel);
 			  		  channel.board.addPlayer(uid, false);
-			  		 //  channel.board.quarterFinal = [];
-				  		// channel.board.semiFinal = [[], []];
-				  		// channel.board.finalGame = [];
+			  		  if(channel.board.players.length <= 0) {
+			  		  	channel.board.quarterFinal = [];
+					  		channel.board.semiFinal = [[], []];
+					  		channel.board.finalGame = [];
+			  		  }
+			  		 
 			  	}else{
 			  		channel.board.addPlayer(uid, false);
 			  		that.addEventListers(channel);
-			  		// channel.board.quarterFinal = [];
-			  		// channel.board.semiFinal = [[], []];
-			  		// channel.board.finalGame = [];
+			  		if(channel.board.players.length <= 0) {
+		  		  	channel.board.quarterFinal = [];
+				  		channel.board.semiFinal = [[], []];
+				  		channel.board.finalGame = [];
+		  		  }
 			  	}
 			  	
 			  	//Get opponenet
