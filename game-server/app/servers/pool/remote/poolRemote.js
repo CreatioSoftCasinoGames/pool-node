@@ -1,15 +1,16 @@
-var poolLogic = require('../../../services/poolLogic');
-var backendFetcher = require('../../../util/backendFetcher');
-var dbLogger = require('../../../services/dbLogger');
-var redisUtil = require('../../../util/redisUtil');
-var _ = require('underscore');
+var poolLogic 			= require('../../../services/poolLogic');
+var backendFetcher 	= require('../../../util/backendFetcher');
+var dbLogger 				= require('../../../services/dbLogger');
+var redisUtil 			= require('../../../util/redisUtil');
+var _ 							= require('underscore');
+var aiLogic 				= require('../../../services/aiLogic');
 
 module.exports = function(app) {
 	return new PoolRemote(app);
 };
 
 var PoolRemote = function(app) {
-	this.app = app;
+	this.app 						= app;
 	this.channelService = app.get('channelService');
 	dbLogger.setApp(app);
 };
@@ -43,7 +44,7 @@ PoolRemote.prototype = {
 								})
 						  }
 	          });
-			    } else if (typeData.club_type ==  "Tournament") {
+			    } else {
 			    	redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
 	      			redis.zrange("club_config_occupancy:"+clubConfigId, 0, -1, function(err, clubId){
 	      				redis.zincrby("club_config_occupancy:"+clubConfigId, 1, "club", clubId, function(err, incData){
@@ -109,6 +110,8 @@ PoolRemote.prototype = {
 
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
+			
+			//Update number of online players in this club
 			if(!!clubData) {
 				redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
 					var onlinePlayers = !!data1 ? parseInt(data1) : 0;
@@ -119,7 +122,6 @@ PoolRemote.prototype = {
 				console.error('Redis details for this club - ' + clubId + ' not found!')
 			}
 
-			redis.hmset("game_player:"+uid, "player_ip", playerIp, function(err, playerIp) {
 			  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
 
 			  	//Create a board here
@@ -128,20 +130,11 @@ PoolRemote.prototype = {
 			  			channel.board = new poolLogic.Board(clubId, redis, clubType);
 			  		  that.addEventListers(channel);
 			  		  channel.board.addPlayer(uid, false);
-			  		  if(channel.board.players.length <= 0) {
-			  		  	channel.board.quarterFinal = [];
-					  		channel.board.semiFinal = [[], []];
-					  		channel.board.finalGame = [];
-			  		  }
-			  		 
+			  		  channel.board.resetTournament();
 			  	}else{
 			  		channel.board.addPlayer(uid, false);
 			  		that.addEventListers(channel);
-			  		if(channel.board.players.length <= 0) {
-		  		  	channel.board.quarterFinal = [];
-				  		channel.board.semiFinal = [[], []];
-				  		channel.board.finalGame = [];
-		  		  }
+			  		channel.board.resetTournament();
 			  	}
 			  	
 			  	//Get opponenet
@@ -150,54 +143,9 @@ PoolRemote.prototype = {
 							if(!!responseData ){
 								if (channel.board.clubType == "Tournament") {
 									setTimeout(function(){
-										var botTimer = setInterval(function(){
-											redis.smembers("available_bots", function(err, data){
-												console.log('Total bot found - ' + data.length);
-												if(!!data && data.length > 0) {
-													if(channel.board.quarterFinal.length == 4 ) {
-														if (channel.board.quarterFinal[3].length >= 2){
-															console.log('List is full now !');
-															clearInterval(botTimer)
-														}
-														
-													} else {
-														console.log('Add this bot - ' + data[0]);
-														redis.sadd("busy_bots", data[0],  function(err, added){
-															redis.srem("available_bots", data[0], function(err, removed){
-																backendFetcher.get("/api/v1/users/"+data[0]+".json", {}, that.app, function(bot_player) {
-																	console.log('Bot player id - ' + bot_player.id);
-																	redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
-															      redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
-																	    channel.board.addPlayer(data[0], true);
-																	  });
-															    });
-																});
-															});
-														});
-														
-													}
-												} else {
-													console.log('No bots found, create one !')
-													if(channel.board.quarterFinal.length == 4 ) {
-														if (channel.board.quarterFinal[3].length >= 2){
-															console.log('List is full now !');
-															clearInterval(botTimer)
-														}
-														
-													} else {
-														backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: "Guest User"}, that.app, function(bot_player) {
-													  	redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
-															  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
-														  	  channel.board.addPlayer(bot_player.login_token, true);
-														    });
-															});
-														});
-													}
-												}
-												
-											});
-										},1000);
-								  },4000) 
+										console.log('Enough of waiting player, bring bots!')
+										aiLogic.addBotPlayers(board, function() {});
+								  },5000) 
 								}
 
 								if (responseData.isDummy == true){
@@ -215,31 +163,26 @@ PoolRemote.prototype = {
 									});
 								}
 								
+								responseData.clubId = clubId;
+								responseData.clubConfigId = clubConfigId;
 
-								if(responseData.success && responseData.message == "Opponent found!") {
-									responseData.clubId = clubId;
-									responseData.clubConfigId = clubConfigId;
-									next(responseData);
-								} else {
-									responseData.clubId = clubId;
-									responseData.clubConfigId = clubConfigId;
-									next(responseData);
-								}
 								//Add all waiting players into players
-								_.each(channel.board.playersToAdd, function(player) {
-					      	channel.board.players.push(player);
-					      });	
+								if(channel.board.playersToAdd.length > 0) {
+									_.each(channel.board.playersToAdd, function(player) {
+						      	channel.board.players.push(player);
+						      });
+								}
+
 							} else {
 								console.error('Opponent details response not found!')
 								next({
 									success: false,
 									message: 'Opponent details response not found!'
-								})
+								});
 							}
 						});
 					});
 				});
-		  });
 	});
 	},
 
@@ -248,6 +191,7 @@ PoolRemote.prototype = {
 		var that = this,
 				board = channel.board,
 				redis = that.app.get('redis');
+				
 		board.eventEmitter.on("addPlayer", function() {
 			msg = {};
 			msg.quarterFinal = board.quarterFinal;
@@ -288,10 +232,8 @@ PoolRemote.prototype = {
 
 		board.eventEmitter.on("tournamentWinner", function(){
 			board.finalGameWinner = _.omit(board.finalGameWinner, 'isDummy', 'playerIp', 'isServer');
-			channel.pushMessage("tournamentWinner", board.finalGameWinner )
-			board.quarterFinal 	= [];
-			board.semiFinal 			= [];
-			board.finalGame 			= [];
+			channel.pushMessage("tournamentWinner", board.finalGameWinner)
+			channel.board.resetTournament();
 		});
 		
 	},
@@ -303,8 +245,8 @@ PoolRemote.prototype = {
 		var that 					= this,
 		  	redis 				= that.app.get("redis"),
 		 		opponentFound = false,
-		  	quarterFinal 	= msg.channel.board.quarterFinal,
-		  	clubType 			= msg.channel.board.clubType;
+		 		channel 			=	_.extend(msg.channel),
+		  	clubType 			= channel.board.clubType;
 
 		redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, playerList){
 			playerList = _.without(playerList, msg.playerId); //Remove the current player from list
@@ -371,7 +313,7 @@ PoolRemote.prototype = {
 													backendFetcher.get("/api/v1/users/"+data[0]+".json", {}, that.app, function(bot_player) {
 														redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
 														  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
-                                msg.channel.board.addPlayer(bot_player.login_token, true);
+                                channel.board.addPlayer(bot_player.login_token, true);
 														    that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
 						                      // console.log(data);
 						                      // console.log('3');
@@ -382,11 +324,11 @@ PoolRemote.prototype = {
 												  });												  
 													
 											  } else {
-											  	msg.channel.board.getBotPlayerName("first_name", function(name){
+											  	channel.board.getBotPlayerName("first_name", function(name){
 											  		backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: name}, that.app, function(bot_player) {
 											  			redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
 															  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
-													  			msg.channel.board.addPlayer(bot_player.login_token, true);
+													  			channel.board.addPlayer(bot_player.login_token, true);
 														  		redis.sadd("available_bots", bot_player.login_token)
 														  		redis.sadd("game_players", "game_player:"+bot_player.login_token);
 														  		redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
@@ -448,7 +390,7 @@ PoolRemote.prototype = {
 			isDummy: isdummy,
 			isServer: isserver,
 			deviceAvatarId: device_avatar_id
-		})	
+		});	
   },
 
   sendMessageToUser: function(uid, serverId, msg) {
@@ -463,8 +405,9 @@ PoolRemote.prototype = {
 
 		if(!!channel) {
 			channel.leave(uid, sid);
+			console.log('Player has been removed from channel!')
 		} else {
-			console.error("channel not found");
+			console.error("Leave - Channel not found!");
 		}	
 		cb()
 	},
