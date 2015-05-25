@@ -247,12 +247,14 @@ PoolRemote.prototype = {
 			msg = {};
 			msg.quarterFinal = board.quarterFinal;
 			msg.semiFinal = board.semiFinal;
+			console.log('In case 1 ');
+			console.log(board.semiFinal);
 			if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
-				msg.semiFinal = [[]]
+				msg.semiFinal = [[]];
 				msg.semiFinal[0] = msg.semiFinal[1];
 			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
-				msg.semiFinal = [[]]
-				msg.semiFinal[1] = msg.semiFinal[0];
+				msg.semiFinal = [[]];
+				msg.semiFinal[0] = msg.semiFinal[0];
 			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
 				msg.semiFinal = [];
 			}
@@ -264,12 +266,14 @@ PoolRemote.prototype = {
 			msg = {};
 			msg.quarterFinal = board.quarterFinal;
 			msg.semiFinal = board.semiFinal;
+			console.log('In case 2 ');
+			console.log(board.semiFinal);
 			if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
 				msg.semiFinal = [[]]
 				msg.semiFinal[0] = board.semiFinal[1];
 			} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
 				msg.semiFinal = [[]]
-				msg.semiFinal[0] = board.semiFinal[0];
+				msg.semiFinal[0] = msg.semiFinal[0];
 			} else if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length <= 0)) {
 				msg.semiFinal = [];
 			}

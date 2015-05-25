@@ -251,6 +251,37 @@ Handler.prototype = {
 								success: true,
 								message: 'Tournament fixture sent!'
 							}); 
+							channel.board.eventEmitter.emit("gameOver");
+							msg = {};
+							msg.quarterFinal = channel.board.quarterFinal;
+							msg.semiFinal = channel.board.semiFinal;
+							if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[0] = msg.semiFinal[1];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[1] = msg.semiFinal[0];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+								msg.semiFinal = [];
+							}
+							msg.finalGame = channel.board.finalGame;
+							channel.pushMessage("addPlayer", msg);
+						} else {
+							channel.board.eventEmitter.emit("gameOver");
+							msg = {};
+							msg.quarterFinal = channel.board.quarterFinal;
+							msg.semiFinal = channel.board.semiFinal;
+							if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[0] = msg.semiFinal[1];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[1] = msg.semiFinal[0];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+								msg.semiFinal = [];
+							}
+							msg.finalGame = channel.board.finalGame;
+							channel.pushMessage("addPlayer", msg);
 						}
 						
 					});
@@ -272,8 +303,8 @@ Handler.prototype = {
 					if(message.success && message.message != "") {
 						channel.pushMessage("tournamentMessage", {
 							playerId 	: msg.playerId,
-							messageId : msg.messageId,
-							message 	: message.message,
+							messageId : msg.messageId+" balls left",
+							// message 	: message.message,
 							stage 		: msg.stage
 						})
 						next(null, {

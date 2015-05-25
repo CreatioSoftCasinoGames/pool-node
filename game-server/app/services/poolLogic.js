@@ -192,7 +192,6 @@ Board.prototype = {
 				    }
 					}
 			  }
-			  console.log(!that.firstSemiOver +' and '+ !that.secondSemiOver +' and '+ QFWinnerFound)
 			  if (QFWinnerFound && !callbackSent) {
 			  	console.log('Sending game over for Quarterfinal!');
 			  	that.eventEmitter.emit("gameOver");
@@ -261,9 +260,14 @@ Board.prototype = {
 			cb();
 		}
 		if(!callbackSent) {
-			console.error('Callback not sent from Game Over, Stage - ' + stage);
+			// console.error('Callback not sent from Game Over, Stage - ' + stage);
 			cb();
 		}
+
+		// setInterval(function(){
+		// 	console.log('THIS IS TIMER BROADCAST')
+		// 	that.eventEmitter.emit("gameOver");
+		// }, 2000)
 
 	},
 
