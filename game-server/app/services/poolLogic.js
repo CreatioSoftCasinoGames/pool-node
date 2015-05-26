@@ -248,7 +248,7 @@ Board.prototype = {
 			} else if(that.finalGame[1].playerId == winnerId ) {
 				that.finalGameWinner = that.finalGame[1];
 			}
-			console.log(that.finalGameWinner);
+			// console.log(that.finalGameWinner);
 			if (that.finalGame[0].playerId == winnerId || that.finalGame[1].playerId == winnerId) {
 				that.eventEmitter.emit("tournamentWinner");
 			}
