@@ -2,35 +2,37 @@ var _ = require('underscore');
 var events = require('events');
 
 var Board = function(clubId, redis, clubType) {
-	this.clubId 		 	= clubId;
-	this.redis 				= redis;
-	this.clubType    	= clubType;
-	this.gamePlayers 	=	[];
-	this.leavePlayers	=	[];
-	this.gameRunning 	= false;
-	this.eventEmitter = new events.EventEmitter();
+	this.clubId 		 		= clubId;
+	this.redis 					= redis;
+	this.clubType    		= clubType;
+	this.waitingTime 		=	5000;
+	this.addbotInterval	=	2000;
+	this.gamePlayers 		=	[];
+	this.leavePlayers		=	[];
+	this.gameRunning 		= false;
+	this.eventEmitter 	= new events.EventEmitter();
 	this.init()
 }
 
 Board.prototype = {
 
 	init: function() {
-		this.players 				= [];
-		this.playersToAdd 	= [];
-		this.temp 					= [];
-		this.quarterFinal 	= [];
-		this.semiFinal 			= [ [], [] ];
-		this.finalGame 			= [];
-		this.game 					= new Game(this);
-		this.firstQuarterOver 	= false;
-		this.secondQuarterOver = false;
-		this.thirdQuarterOver 	= false;
-		this.fourthQuarterOver = false;
-		this.firstSemiOver 	= false;
-		this.secondSemiOver = false;
-		this.finalFromFirstFound = false;
+		this.players 							= [];
+		this.playersToAdd 				= [];
+		this.temp 								= [];
+		this.quarterFinal 				= [];
+		this.semiFinal 						= [ [], [] ];
+		this.finalGame 						= [];
+		this.game 								= new Game(this);
+		this.firstQuarterOver 		= false;
+		this.secondQuarterOver 		= false;
+		this.thirdQuarterOver 		= false;
+		this.fourthQuarterOver 		= false;
+		this.firstSemiOver 				= false;
+		this.secondSemiOver 			= false;
+		this.finalFromFirstFound 	= false;
 		this.finalFromSecondFound = false;
-		this.finalGameWinner = [];
+		this.finalGameWinner 			= [];
 	},
 
 
@@ -278,6 +280,14 @@ Board.prototype = {
 				redis = that.redis;
 		that.players = [];
 		game.status = "PROGRESS";
+	},
+
+	resetTournament: function(){
+		if(this.players.length <= 0) {
+	  	this.quarterFinal = [];
+  		this.semiFinal = [[], []];
+  		this.finalGame = [];
+	  }
 	},
 
 	restartGame: function() {
