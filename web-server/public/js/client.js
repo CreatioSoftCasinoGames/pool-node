@@ -90,7 +90,7 @@ Pool.prototype = {
 		    port: that.port,
 		    log: true
 		  }, function() {
-		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, loginType: "login", playerIp: "192.168.2.102", device_id: "lpsj2jjaef0w9udid2d5e4b8", playerName: "Amrendra"}, function(data) {
+		    pomelo.request("gate.gateHandler.getConnector", {is_guest: true, loginType: "registration", playerIp: "192.168.2.102", device_id: "lpsj2jjaef0w9udid2d5e4b8", playerName: "Amrendra"}, function(data) {
 		      if(data.loginSuccess){
 						pomelo.disconnect();
 						that.user = data.user;

@@ -21,6 +21,7 @@ handler.getConnector = function(msg, session, next) {
 
 	if (msg.is_guest && !!msg.loginType) {
 	  if (msg.loginType == "registration") {
+	  	console.log('Login!')
 	    var createNewUser = Math.random().toString(36).slice(2) + Math.random().toString(16).slice(2);
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: createNewUser, first_name: msg.playerName }, self.app, function(user) {
 
