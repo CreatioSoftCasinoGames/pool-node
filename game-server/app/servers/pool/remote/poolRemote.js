@@ -464,7 +464,7 @@ PoolRemote.prototype = {
 		if(!!channel) {
 			channel.leave(uid, sid);
 		} else {
-			console.error("channel not found");
+			console.error("No channel for this player, Not playing game!");
 		}	
 		cb()
 	},

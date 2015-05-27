@@ -134,7 +134,7 @@ Pool.prototype = {
 		    port: that.port,
 		    log: true
 		  }, function() {
-		    pomelo.request("gate.gateHandler.getConnector", { fb_id: "neeraj1234", email: null, fb_friends_list: "[154653546]", first_name: null, last_name: null, device_id: "neeraj123"}, function(data) {
+		    pomelo.request("gate.gateHandler.getConnector", { fb_id: "neeraj1234", email: null, fb_friends_list: "[154653546]", first_name: "neeraj", last_name: null, device_id: "neeraj123"}, function(data) {
 		    	console.log(data);
 		      if(data.loginSuccess){
 						pomelo.disconnect();
