@@ -15,6 +15,9 @@ EntryRemote.prototype = {
 			connector.send(null, route, msg, [this.sessionService.getByUid(uid)[0].id], {}, function(err) {
 				cb(null)
 		  });
+	  } else {
+			console.error('Session not found for this player - ' + uid);
+			cb(null)
 		}
 	}
 }

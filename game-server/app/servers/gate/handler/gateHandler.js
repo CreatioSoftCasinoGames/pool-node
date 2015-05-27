@@ -21,35 +21,65 @@ handler.getConnector = function(msg, session, next) {
 
 	if (msg.is_guest && !!msg.loginType) {
 	  if (msg.loginType == "registration") {
+	  	console.log('Login!')
 	    var createNewUser = Math.random().toString(36).slice(2) + Math.random().toString(16).slice(2);
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: createNewUser, first_name: msg.playerName }, self.app, function(user) {
+
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data) {
 	        next(null, data);
 	      })
 	    })
     } else {
-    	console.log('++++++')
 	    backendFetcher.post(getProfileRoute, {is_guest: true, device_id: msg.device_id, first_name: msg.playerName }, self.app, function(user) {
-	    	console.log(user);
 	      self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data) {
 	        next(null, data);
 	      })
 	    })
 	  }
   } else if(!!msg.fb_id && !!msg.fb_friends_list && !msg.device_id) {
-  	firstName = !!msg.first_name ? msg.first_name : 'Guest';
-		lastName = !!msg.last_name ? msg.last_name : 'User';
+  // 	firstName = !!msg.first_name ? msg.first_name : 'Guest';
+		// lastName = !!msg.last_name ? msg.last_name : 'User';
 		emailId = !!msg.email ? msg.email : null;
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user){
+
+    if (!!msg.first_name && !!msg.last_name) {
+      firstName = msg.first_name;
+      lastName = msg.last_name;
+    } else if (!!msg.first_name && !msg.last_name) {
+      firstName = msg.first_name;
+      lastName = null;
+    } else if (!msg.first_name && !!msg.last_name) {
+      firstName = null;
+      lastName = msg.last_name;
+    } else if (!msg.first_name && !msg.last_name) {
+    	firstName = 'Guest';
+    	lastName = 'User';
+    }
+
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id, ip: msg.playerIp}, self.app, function(user){
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data){
 		  	next(null,data);
 		  })
 		})
 	} else if(!!msg.fb_id && !!msg.device_id) {
-		firstName = !!msg.first_name ? msg.first_name : 'Guest';
-		lastName = !!msg.last_name ? msg.last_name : 'User';
+
+    if (!!msg.first_name && !!msg.last_name) {
+      firstName = msg.first_name;
+      lastName = msg.last_name;
+    } else if (!!msg.first_name && !msg.last_name) {
+      firstName = msg.first_name;
+      lastName = null;
+    } else if (!msg.first_name && !!msg.last_name) {
+      firstName = null;
+      lastName = msg.last_name;
+    } else if (!msg.first_name && !msg.last_name) {
+    	firstName = 'Guest';
+    	lastName = 'User';
+    }
+
+		// firstName = !!msg.first_name ? msg.first_name : 'Guest';
+		// lastName = !!msg.last_name ? msg.last_name : 'User';
 		emailId = !!msg.email ? msg.email : null;
-		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, self.app, function(user) {
+		backendFetcher.post(getProfileRoute, {fb_id: msg.fb_id, email: emailId, first_name: firstName, last_name: lastName, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id, ip: msg.playerIp}, self.app, function(user) {
 			self.getHostAndPort({user: user, connectors: connectors, redis: redis, ip: msg.playerIp}, function(data){
 		  	next(null,data);
 		  })
@@ -73,7 +103,7 @@ handler.getConnector = function(msg, session, next) {
 				if(user != null){
 					var res = dispatcher.dispatch(user.id, connectors);
 					redis.sadd("game_players", "game_player:"+user.login_token);
-			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, "device_avatar_id", parseInt(user.device_avatar_id))
+			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_ip", msg.ip, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, "device_avatar_id", parseInt(user.device_avatar_id))
 					next(null, {
 						code: 200,
 						host: res.host,
