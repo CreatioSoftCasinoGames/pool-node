@@ -136,7 +136,7 @@ handler.getHostAndPort = function(msg, next) {
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
-    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "yoursIp", msg.ip, "device_avatar_id", parseInt(msg.user.device_avatar_id ))
+    msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "player_ip", msg.ip, "device_avatar_id", parseInt(msg.user.device_avatar_id ))
     next({
       code: 200,
       host: res.host,
