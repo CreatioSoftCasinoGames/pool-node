@@ -309,7 +309,7 @@ Handler.prototype = {
 						})
 						next(null, {
 							success: true,
-							message: message.message
+							messageId : msg.messageId+" balls left",
 						});
 					} else {
 						console.error('Message for this message id does not exists!');

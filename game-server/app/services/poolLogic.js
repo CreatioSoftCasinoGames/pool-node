@@ -1,43 +1,46 @@
 var _ = require('underscore');
 var events = require('events');
 
-var Board = function(clubId, redis, clubType) {
-	this.clubId 		 	= clubId;
-	this.redis 				= redis;
-	this.clubType    	= clubType;
-	this.gamePlayers 	=	[];
-	this.leavePlayers	=	[];
-	this.gameRunning 	= false;
-	this.eventEmitter = new events.EventEmitter();
+var Board = function(clubId, redis, app, clubType) {
+	this.clubId 		 		= clubId;
+	this.redis 					= redis;
+	this.app 						=	app;
+	this.clubType    		= clubType;
+	this.waitingTime 		=	5000;
+	this.addbotInterval	=	2000;
+	this.gamePlayers 		=	[];
+	this.leavePlayers		=	[];
+	this.gameRunning 		= false;
+	this.eventEmitter 	= new events.EventEmitter();
 	this.init()
 }
 
 Board.prototype = {
 
 	init: function() {
-		this.players 				= [];
-		this.playersToAdd 	= [];
-		this.temp 					= [];
-		this.quarterFinal 	= [];
-		this.semiFinal 			= [ [], [] ];
-		this.finalGame 			= [];
-		this.game 					= new Game(this);
-		this.firstQuarterOver 	= false;
-		this.secondQuarterOver = false;
-		this.thirdQuarterOver 	= false;
-		this.fourthQuarterOver = false;
-		this.firstSemiOver 	= false;
-		this.secondSemiOver = false;
-		this.finalFromFirstFound = false;
+		this.players 							= [];
+		this.playersToAdd 				= [];
+		this.botAdded 						=	false;
+		this.playerSets 					= [];
+		this.quarterFinal 				= [];
+		this.semiFinal 						= [ [], [] ];
+		this.finalGame 						= [];
+		this.game 								= new Game(this);
+		this.firstQuarterOver 		= false;
+		this.secondQuarterOver 		= false;
+		this.thirdQuarterOver 		= false;
+		this.fourthQuarterOver 		= false;
+		this.firstSemiOver 				= false;
+		this.secondSemiOver 			= false;
+		this.finalFromFirstFound 	= false;
 		this.finalFromSecondFound = false;
-		this.finalGameWinner = [];
+		this.finalGameWinner 			= [];
 	},
 
 
 	addPlayer: function(playerId, isDummy) {
 		var that = this;
 		var player = new Player(playerId, isDummy, that.redis, function(data) {
-				console.log('Player details added !');
 				var opponentFound = false;
 	    	if (that.clubType == "OneToOne") {
 			    that.playersToAdd.push(player);
@@ -53,31 +56,30 @@ Board.prototype = {
 			  	if(that.quarterFinal.length <= 3 || (!!that.quarterFinal[3] && that.quarterFinal[3].length <= 2)) {
 			  		that.redis.hgetall("club:"+that.clubId, function(err, findClub) {
 							that.redis.zincrby("club_config_occupancy:"+findClub.club_config_id, 1, "club:"+that.clubId, function(err, newData) {
-								console.log('new data is ' + that.clubId + ' - ' + newData);
 							});
 						});
 						that.players.push(player);
-				    that.temp.push(player);
+				    that.playerSets.push(player);
 				    if (player.isDummy == true) {
 				    	player.playerIp = null;
 				    }
-				    if (that.temp.length == 2) {
-			        that.temp[0].isServer = true;
-			        that.temp[1].isServer = false;
-		            if ((that.temp[0].isDummy == true) && (that.temp[1].isDummy == true)) {
-		            	var winnerId = that.temp[0].playerId;
-		            	console.log('Winner id - ' + winnerId);
-		            	setTimeout(function(){
-		            		that.gameOver(winnerId, "quarterFinal", function(){});
-		            	},3000);
-		            }
+				    if (that.playerSets.length == 2) {
+			        that.playerSets[0].isServer = true;
+			        that.playerSets[1].isServer = false;
+	            if ((that.playerSets[0].isDummy == true) && (that.playerSets[1].isDummy == true)) {
+	            	// console.log(that.playerSets);
+	            	var winnerId = that.playerSets[0].playerId;
+	            	console.log('Winner id - ' + winnerId);
+	            	setTimeout(function(){
+	            		that.gameOver(winnerId, "quarterFinal", function(){});
+	            	},3000);
+	            }
 
-				        if (that.quarterFinal.length > 4) {
-				            that.quarterFinal = [];
-				        }
-				        that.quarterFinal.push(that.temp);
-				        that.temp = [];
-
+			        if (that.quarterFinal.length > 4) {
+			            that.quarterFinal = [];
+			        }
+			        that.quarterFinal.push(that.playerSets);
+			        that.playerSets = [];
 				    }
 				    that.eventEmitter.emit("addPlayer");
 			  	} 
@@ -248,7 +250,7 @@ Board.prototype = {
 			} else if(that.finalGame[1].playerId == winnerId ) {
 				that.finalGameWinner = that.finalGame[1];
 			}
-			console.log(that.finalGameWinner);
+			// console.log(that.finalGameWinner);
 			if (that.finalGame[0].playerId == winnerId || that.finalGame[1].playerId == winnerId) {
 				that.eventEmitter.emit("tournamentWinner");
 			}
@@ -278,6 +280,14 @@ Board.prototype = {
 				redis = that.redis;
 		that.players = [];
 		game.status = "PROGRESS";
+	},
+
+	resetTournament: function(){
+		if(this.players.length <= 0) {
+	  	this.quarterFinal = [];
+  		this.semiFinal = [[], []];
+  		this.finalGame = [];
+	  }
 	},
 
 	restartGame: function() {
