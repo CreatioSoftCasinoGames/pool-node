@@ -25,9 +25,17 @@ Handler.prototype = {
 	getClubConfigs: function(msg, session, next) {
 		var that = this;
 		backendFetcher.get("/api/v1/club_configs.json", {club_type: msg.club_type}, that.app, function(data) {
-			next(null, {
-				club_configs: data
-			})
+			if(!!data) {
+				console.log(data)
+				next(null, {
+					club_configs: data
+				})
+			} else {
+				console.error('No room found from rails!');
+				next(null, {
+					success: false
+				})
+			}
 		})
 	},
 
