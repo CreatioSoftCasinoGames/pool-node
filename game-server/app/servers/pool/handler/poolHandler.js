@@ -59,10 +59,8 @@ Handler.prototype = {
 	},
 
 	general: function(msg, session, next) {
-		console.log(msg);
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
-			console.log(channel);
 			that.generalProgress(channel, session.uid, msg);
 			next(null, {
 				success: true
@@ -207,7 +205,6 @@ Handler.prototype = {
 	},
 
 	gameOver: function(msg, session, next) {
-		console.log(msg);
 		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
 			console.error('Parameters mismatch!');
 			next(null, {
@@ -299,6 +296,8 @@ Handler.prototype = {
 	getMessage: function(msg, session, next) {
 		if((!!msg.messageId && msg.messageId != "") &&  !!msg.playerId && (!!msg.stage && msg.stage != "")) {
 			this.getPlayerAndChannel(session, function(player, channel) {
+				console.log(channel);
+				console.log(channel.board);
 				channel.board.getMessage(parseInt(msg.messageId), function(message){
 					if(message.success && message.message != "") {
 						channel.pushMessage("tournamentMessage", {

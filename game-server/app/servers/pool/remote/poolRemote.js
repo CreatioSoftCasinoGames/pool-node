@@ -46,7 +46,6 @@ PoolRemote.prototype = {
 	          });
 			    } else {
     					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, data){
-    						console.log(data);
     						if(data.length>0) {
 									freeClubs = true;
 									cb({
@@ -94,6 +93,8 @@ PoolRemote.prototype = {
 
   addToClub: function(uid, sid, clubConfigId, clubId, flag, forceJoin, playerIp, next) {
 
+  	console.log('Player ip - ' + playerIp);
+
 		var that 		= this,
 				redis 	= that.app.get("redis"),
 				channel = that.channelService.getChannel(clubId, flag);
@@ -116,7 +117,12 @@ PoolRemote.prototype = {
 				  });
 				});
 			} else {
-				console.error('Redis details for this club - ' + clubId + ' not found!')
+				console.error('Redis details for this club - ' + clubId + ' not found!');
+				next({
+					success: false,
+					message: 'Please sync and try again!'
+				})
+				return;
 			}
 
 			  redis.hgetall("game_player:"+uid, function(err, playerDetails) {
@@ -139,7 +145,6 @@ PoolRemote.prototype = {
 					redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
 						that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, sid: sid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
 							if(!!responseData ){
-								console.log(channel.board.clubType);
 								if (channel.board.clubType == "Tournament") {
 									console.log('Bot added  - ' + channel.board.botAdded);
 									if(!channel.board.botAdded) {
@@ -265,8 +270,7 @@ PoolRemote.prototype = {
 														  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
                                 channel.board.addPlayer(bot_player.login_token, true);
 														    that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
-						                      // console.log(data);
-						                      // console.log('3');
+						                      console.log('3');
 						                      next(data)
 						                    })
 														  });
@@ -326,7 +330,7 @@ PoolRemote.prototype = {
 
 
   returnData: function(id, opid, opname, opxp, oplevel, opimage, opip, isdummy, isserver, device_avatar_id, next ){
-	next({
+		next({
 			message: !isdummy ? "Opponent found!" : "Bot player added !",
 			success: true,
 			playerId: id,
@@ -339,8 +343,9 @@ PoolRemote.prototype = {
 			isDummy: isdummy,
 			isServer: isserver,
 			deviceAvatarId: device_avatar_id
-		});	
+		})	
   },
+
 
   sendMessageToUser: function(uid, serverId, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, "addPlayer"]}, function(data) {});

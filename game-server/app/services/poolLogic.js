@@ -373,6 +373,7 @@ var Player = function(playerId, isDummy, redis, cb) {
 	that.playerId = playerId;
 	that.isDummy = isDummy;
 	redis.hgetall("game_player:"+playerId, function(err, data){
+		console.log(data);
 		if(!!data) {
 		  that.playerLevel = parseInt(data.player_level);
 		  that.playerName = data.player_name;
