@@ -54,6 +54,7 @@ Handler.prototype.subscribe = function(msg, session, next) {
 };
 
 Handler.prototype.enter= function(msg, session, next) {
+	console.log(msg);
 	var that = this;
 	var sessionService = that.app.get('sessionService');
 	var redis = that.app.get("redis");
@@ -125,9 +126,10 @@ var onUserLeave = function(app, session) {
 	}
 	app.get('redis').del("game_players" , "game_player:"+session.uid, function(err, data) {
 		backendFetcher.delete("/api/v1/sessions/"+session.uid+".json", {}, app, function(data) {
+			console.log(data.message);
 		});
 	})
-	// app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('tableId'), true, null);
+	app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('clubId'), null);
 };
 
 

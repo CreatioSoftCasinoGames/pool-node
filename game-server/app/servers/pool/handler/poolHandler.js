@@ -59,10 +59,8 @@ Handler.prototype = {
 	},
 
 	general: function(msg, session, next) {
-		console.log(msg);
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
-			console.log(channel);
 			that.generalProgress(channel, session.uid, msg);
 			next(null, {
 				success: true
@@ -207,7 +205,6 @@ Handler.prototype = {
 	},
 
 	gameOver: function(msg, session, next) {
-		console.log(msg);
 		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
 			console.error('Parameters mismatch!');
 			next(null, {
@@ -246,10 +243,44 @@ Handler.prototype = {
 						return;
 					}
 					channel.board.gameOver(winnerId, stage, function(data) {
-						next(null,{
-							success: true,
-							message: 'Tournament fixture sent!'
-						});
+						if (stage != "final"){
+							next(null,{
+								success: true,
+								message: 'Tournament fixture sent!'
+							}); 
+							channel.board.eventEmitter.emit("gameOver");
+							msg = {};
+							msg.quarterFinal = channel.board.quarterFinal;
+							msg.semiFinal = channel.board.semiFinal;
+							if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[0] = msg.semiFinal[1];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[1] = msg.semiFinal[0];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+								msg.semiFinal = [];
+							}
+							msg.finalGame = channel.board.finalGame;
+							channel.pushMessage("addPlayer", msg);
+						} else {
+							channel.board.eventEmitter.emit("gameOver");
+							msg = {};
+							msg.quarterFinal = channel.board.quarterFinal;
+							msg.semiFinal = channel.board.semiFinal;
+							if ((msg.semiFinal[0].length <= 0) && (msg.semiFinal[1].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[0] = msg.semiFinal[1];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length > 0)) {
+								msg.semiFinal = [[]]
+								msg.semiFinal[1] = msg.semiFinal[0];
+							} else if ((msg.semiFinal[1].length <= 0) && (msg.semiFinal[0].length <= 0)) {
+								msg.semiFinal = [];
+							}
+							msg.finalGame = channel.board.finalGame;
+							channel.pushMessage("addPlayer", msg);
+						}
+						
 					});
 				}
 			} else {
@@ -263,13 +294,21 @@ Handler.prototype = {
 	},
 
 	getMessage: function(msg, session, next) {
-		if(!!msg.messageId && msg.messageId != "") {
+		if((!!msg.messageId && msg.messageId != "") &&  !!msg.playerId && (!!msg.stage && msg.stage != "")) {
 			this.getPlayerAndChannel(session, function(player, channel) {
+				console.log(channel);
+				console.log(channel.board);
 				channel.board.getMessage(parseInt(msg.messageId), function(message){
 					if(message.success && message.message != "") {
+						channel.pushMessage("tournamentMessage", {
+							playerId 	: msg.playerId,
+							messageId : msg.messageId+" balls left",
+							// message 	: message.message,
+							stage 		: msg.stage
+						})
 						next(null, {
 							success: true,
-							message: message.message
+							messageId : msg.messageId+" balls left",
 						});
 					} else {
 						console.error('Message for this message id does not exists!');
@@ -281,10 +320,10 @@ Handler.prototype = {
 				});	
 			});
 		} else {
-			console.error('Key messageId not found!');
+			console.error('Key is missing or mismatched!');
 			next(null,{
 				success: false,
-				message: 'Key messageId not found!'
+				message: 'Key is missing or mismatched!'
 			});
 		}
 	},
