@@ -123,11 +123,11 @@ handler.getConnector = function(msg, session, next) {
 
 handler.getHostAndPort = function(msg, next) {
 	var hostAndPort = this.app.sessionService.service.sessions
-	// for (first in hostAndPort) {
-	// 	var ipAddress = this.app.sessionService.service.sessions[first].__socket__.remoteAddress.ip
-	// 	console.log(ipAddress)
-	// 	break;
-	// }	
+	for (first in hostAndPort) {
+		var ipAddress = this.app.sessionService.service.sessions[first].__socket__.remoteAddress.ip
+		console.log(ipAddress)
+		break;
+	}	
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
@@ -138,7 +138,7 @@ handler.getHostAndPort = function(msg, next) {
       port: res.clientPort,
       user: msg.user,
       loginSuccess: true,
-      yoursIp: msg.ip
+      yoursIp: ipAddress
     });
   }
 },
