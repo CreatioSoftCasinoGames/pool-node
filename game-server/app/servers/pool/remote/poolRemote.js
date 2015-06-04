@@ -17,7 +17,7 @@ var PoolRemote = function(app) {
 
 PoolRemote.prototype = {
 
-	findClub:function(clubConfigId, cb) {
+	findClub:function(clubConfigId, uid, cb) {
 		var that 			= this;
         freeClubs = false,
 				redis 		= that.app.get("redis");
@@ -45,8 +45,15 @@ PoolRemote.prototype = {
 						  }
 	          });
 			    } else {
-    					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, data){
-    						if(data.length>0) {
+  					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, data){
+  						redis.hmget("game_player:"+uid, "room_id", function(err, playerRoom){
+  							if(!!playerRoom) {
+  								data = _.without(data, parseInt(playerRoom));
+  							} else {
+  								console.error('Player was not playing in any Tournament room!');
+  							}
+  							
+  							if(data.length>0) {
 									freeClubs = true;
 									cb({
 										success: true,
@@ -54,7 +61,6 @@ PoolRemote.prototype = {
 									});
 								} else if(data.length == 0 || !freeClubs) {
 									backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
-										console.log(data)
 										if(data.valid) {
 											redisUtil.createClub(data.club, redis);
 											cb({
@@ -64,7 +70,8 @@ PoolRemote.prototype = {
 										}
 									});
 							  }
-		          });
+							});
+	          });
 			    }
       	} else {
       		console.error('No clubs found, Please sync the database!');
@@ -78,7 +85,7 @@ PoolRemote.prototype = {
   
 	add: function(uid, sid, clubConfigId, playerIp, flag, cb) {
 		var that = this;
-		that.findClub(clubConfigId, function(clubData) {
+		that.findClub(clubConfigId, uid, function(clubData) {
 			if(clubData.success) {
 				that.addToClub(uid, sid, clubConfigId, parseInt(clubData.clubId), flag, false, playerIp, cb);
 			} else {
@@ -92,12 +99,12 @@ PoolRemote.prototype = {
 	},
 
   addToClub: function(uid, sid, clubConfigId, clubId, flag, forceJoin, playerIp, next) {
-
-  	console.log('Player ip - ' + playerIp);
-
 		var that 		= this,
 				redis 	= that.app.get("redis"),
 				channel = that.channelService.getChannel(clubId, flag);
+
+		//Set this club id with user
+		redis.hmset("game_player:"+uid, "club_id", clubId, function(err, clubSaved){});
 
     if(!!channel) {
     	channel.add(uid, sid);
