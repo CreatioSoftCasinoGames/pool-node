@@ -46,13 +46,12 @@ PoolRemote.prototype = {
 	          });
 			    } else {
   					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, data){
-  						redis.hmget("game_player:"+uid, "room_id", function(err, playerRoom){
+  						redis.hmget("game_player:"+uid, "club_id", function(err, playerRoom){
   							if(!!playerRoom) {
-  								data = _.without(data, parseInt(playerRoom));
+  								data = _.without(data, "club:"+playerRoom);
   							} else {
   								console.error('Player was not playing in any Tournament room!');
   							}
-  							
   							if(data.length>0) {
 									freeClubs = true;
 									cb({
@@ -114,7 +113,6 @@ PoolRemote.prototype = {
 
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
-			console.log(clubData);
 			
 			//Update number of online players in this club
 			if(!!clubData) {
@@ -277,7 +275,6 @@ PoolRemote.prototype = {
 														  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
                                 channel.board.addPlayer(bot_player.login_token, true);
 														    that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, playerDetails.player_ip, true, true, bot_player.device_avatar_id, function(data){
-						                      console.log('3');
 						                      next(data)
 						                    })
 														  });

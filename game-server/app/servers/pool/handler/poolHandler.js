@@ -85,6 +85,47 @@ Handler.prototype = {
 		});
 	},
 
+	connectFacebook: function(msg, session, next){
+		var that 	= this,
+				redis = that.app.get("redis");
+
+		if(!!msg.fb_id && !!msg.fb_friends_list) {
+			backendFetcher.put("/api/v1/users/"+session.uid+"/connect_facebook", {fb_id: msg.fb_id fb_friends_list: msg.fb_friends_list}, that.app, function(data) {
+				if(!!data.login_token) {
+					//Send broadcast to this previous fb user
+					redis.hmget("game_player:"+session.uid, "player_server_id", function(err, serverId){
+						if(!!serverId) {
+							that.sendMessageToUser(session.uid, serverId, "multipleLogin", "Logged in with other device!");
+						} else {
+							console.error('Server id not found for player - '+session.uid);
+						}
+					});
+					next(null, {
+						success: true
+						message: "User has been connected with facebook!"
+					})
+				} else {
+					next(null, {
+						success: true
+						message: "User has been connected with facebook!"
+					})
+				}
+			});
+		} else {
+			console.error('Parameter mismatch!');
+			console.log(msg);
+			next(null, {
+				success: false,
+				message: 'Parameter mismatch! (Require fb_id and fb_friends_list)',
+				params: msg
+			})
+		}
+	},
+
+	sendMessageToUser: function(uid, serverId, route, msg) {
+   this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});
+  },
+
 	getOnlinePlayers: function(msg, session, next) {
     var that = this;
     var redis = that.app.get("redis");
