@@ -86,11 +86,19 @@ Handler.prototype = {
 	},
 
 	connectFacebook: function(msg, session, next){
-		var that 	= this,
-				redis = that.app.get("redis");
+		var that 			= this,
+				redis 		= that.app.get("redis"),
+				firstName = "";
+				lastName 	= "";
+				email 		= ""
 
 		if(!!msg.fb_id && !!msg.fb_friends_list) {
-			backendFetcher.put("/api/v1/users/"+session.uid+"/connect_facebook", {fb_id: msg.fb_id fb_friends_list: msg.fb_friends_list}, that.app, function(data) {
+
+			firstName = !!msg.first_name && msg.first_name != "" ? msg.first_name : "Guest User";
+			lastName 	= !!msg.last_name && msg.last_name != "" ? msg.last_name : "";
+			email 		= !!msg.email && msg.email != "" ? msg.email : null;
+
+			backendFetcher.put("/api/v1/users/"+session.uid+"/connect_facebook", {fb_id: msg.fb_id, first_name: firstName, last_name: lastName, email: email, fb_friends_list: msg.fb_friends_list}, that.app, function(data) {
 				if(!!data.login_token) {
 					//Send broadcast to this previous fb user
 					redis.hmget("game_player:"+session.uid, "player_server_id", function(err, serverId){
