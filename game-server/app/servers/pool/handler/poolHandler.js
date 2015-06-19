@@ -22,6 +22,7 @@ var Handler = function(app) {
 
 Handler.prototype = {
 
+	//Handle get club config details from client (Data will be fetched form Rails)
 	getClubConfigs: function(msg, session, next) {
 		var that = this;
 		backendFetcher.get("/api/v1/club_configs.json", {club_type: msg.club_type}, that.app, function(data) {
@@ -39,6 +40,7 @@ Handler.prototype = {
 		})
 	},
 
+	//Get a player's channel using clubId 
 	getPlayerAndChannel: function(session, cb) {
 		var that = this;
 		var channel = that.channelService.getChannel(session.get('clubId'), false);
@@ -66,6 +68,7 @@ Handler.prototype = {
 		})	
 	},
 
+	//Handle general progress request from client
 	general: function(msg, session, next) {
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
@@ -77,6 +80,7 @@ Handler.prototype = {
 	},
 
 
+	//Simply send back what client send (remove some unuseful keys from object)
 	generalProgress: function(channel, playerId, data) {
 		data = _.omit(data, 'timestamp', '__route__');
 		channel.pushMessage("generalProgress", {
@@ -85,6 +89,7 @@ Handler.prototype = {
 		});
 	},
 
+	//Handle facebook connect request from client
 	connectFacebook: function(msg, session, next){
 		var that 			= this,
 				redis 		= that.app.get("redis"),
@@ -130,11 +135,14 @@ Handler.prototype = {
 		}
 	},
 
+	//Send a broadcast to player from rpcInvoke
 	sendMessageToUser: function(uid, serverId, route, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});
   },
 
-	getOnlinePlayers: function(msg, session, next) {
+	//Handle online player count request from client
+	//Online players stored in redis
+	etOnlinePlayers: function(msg, session, next) {
     var that = this;
     var redis = that.app.get("redis");
     if (msg.gameType == "OneToOne") {
@@ -158,6 +166,7 @@ Handler.prototype = {
     }
   },
 
+  //Get online players form every instances of all room configs
   getPlayerOnline: function(msg, next) {
     var totalData = 0;
     var onlinePlayer = [];
@@ -176,16 +185,18 @@ Handler.prototype = {
   },
 
 
+	//Handle request to update profile (from this file)
 	updatePlayer: function(msg, next) {
+		var details = {};
+		layerId = msg.playerId;
 		details.xp 						= !!msg.xp ? msg.xp : 0;
-		details.win_streak 		= !!details.winStreak ? details.winStreak : 0;
-		details.award 				= !!details.award ? details.award : 0;
-		details.win 					= !!details.win ? details.win : 0;
-		details.game_played 	= !!details.gamePlayed ? details.gamePlayed : 0;
-		console.log(details);
-
-		dbLogger.updateProfile({playerId: session.uid, details: details;})
+		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
+		details.award 				= !!msg.award ? msg.award : 0;
+		details.win 					= !!msg.win ? msg.win : 0;
+		details.game_played 	= !!msg.gamePlayed ? msg.gamePlayed : 0;
+		dbLogger.updateGame({playerId: playerId, details: details})
 	},
+
 	//This worker is used to update user's profile through Rails (sidekiq)
 	updateProfile: function(msg, session, next){
 		var that = this,
@@ -194,65 +205,19 @@ Handler.prototype = {
 		details.ball_potted 	= !!msg.ball_potted ? msg.ball_potted : 0;
 		details.strike_count 	= !!msg.strike_count ? msg.strike_count : 0;
 		details.xp 						= !!msg.xp ? msg.xp : 0;
-		details.win_streak 		= !!details.winStreak ? details.winStreak : 0;
-		details.award 				= !!details.award ? details.award : 0;
-		details.win 					= !!details.win ? details.win : 0;
-		details.game_played 	= !!details.gamePlayed ? details.gamePlayed : 0;
-		console.log(details);
+		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
+		details.award 				= !!msg.award ? msg.award : 0;
+		details.win 					= !!msg.win ? msg.win : 0;
+		details.game_played 	= !!msg.gamePlayed ? msg.gamePlayed : 0;
 
-		dbLogger.updateProfile({playerId: session.uid, details: details;})
-		
-		// if(!!msg.current_coins_balance && !!msg.total_games_played){
-		// 	dbLogger.updateGame({playerId: session.uid, current_coins_balance: msg.current_coins_balance, total_games_played: msg.total_games_played})
-		// }else if(!!msg.ball_potted && !!msg.strike_count && !!msg.accuracy) {
-		// 	dbLogger.updateGame({playerId: session.uid, ball_potted: msg.ball_potted, strike_count: msg.strike_count, accuracy: msg.accuracy})
-		// } else if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
-		// 	dbLogger.updateGame({playerId: session.uid, win_streak:  msg.win_streak, total_coins_won:  msg.total_coins_won, win_percentage:  msg.win_percentage,
-  //                          won_count:  msg.won_count,
-  //                          xp:  msg.xp,
-  //                          current_coins_balance: msg.current_coins_balance 
-		// 	                   })
-		// }else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0) && (msg.accuracy || msg.accuracy == 0)) {
-		// 	dbLogger.updateGame({playerId: session.uid,
-		// 		                   ball_potted:  msg.ball_potted,
-		// 		                   strike_count: msg.strike_count,
-		// 		                   accuracy: msg.accuracy
-		// 	                   })
-
-		// }else if ((msg.total_coins_won || msg.total_coins_won == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0)){
-		//   dbLogger.updateGame({playerId: session.uid,
-		// 	                     total_coins_won:  msg.total_coins_won,
-		//                        current_coins_balance:  msg.current_coins_balance
-		//                      })	
-
-		// }else if(msg.total_coins_won || msg.total_coins_won == 0){
-		// 	dbLogger.updateGame({playerId: session.uid,
-		// 	                     total_coins_won:  msg.total_coins_won
-		// 	                   })
-
-		
-  //   }else if(msg.device_avatar_id){
-		// 	dbLogger.updateGame({playerId: session.uid, device_avatar_id:  msg.device_avatar_id})
-		// }else if (msg.total_coins_won){
-		// 	dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
-		// }else if (msg.current_coins_balance){
-		// 	dbLogger.updateGame({playerId: session.uid, current_coins_balance:  msg.current_coins_balance})	
-		// }else if (msg.total_games_played){
-		// 	dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
-		// }else if (msg.rank){
-		// 	dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
+		dbLogger.updateGame({playerId: session.uid, details: details})
 		// }else if (msg.total_time_in_game){
 		// 	dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
-		// }else if (msg.current_level){
-		// 	dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
-		// }else if (msg.flag){
-		// 	dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
-		// }else if (msg.country){
-		// 	dbLogger.updateGame({playerId: session.uid, country:  msg.country})
 		// }
 		next();
 	},
 
+	//Handle chat messages request from client
 	chat: function(msg, session, next) {
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
@@ -274,6 +239,9 @@ Handler.prototype = {
 		});		
 	},
 
+	//Handle game over request from client
+	//OneToOne - Simple update winners and loosers profile update
+	//Tournament - Update fixture by sending players from Quarter to Semi and Semi to final if winner
 	gameOver: function(msg, session, next) {
 		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
 			console.error('Parameters mismatch!');
@@ -305,20 +273,28 @@ Handler.prototype = {
 					channel.board.players = [];
 					redis.hgetall("club:"+clubId, function(err, clubData) {
 						var clubConfigId = clubData.club_config_id;
+
+						//Update winner and loosers profile 
 						redis.hgetall("club_config:"+clubConfigId, function(err, clubConfigData) {
 							var winAmount = clubConfigData.winner_amount;
 							var winnerXp = clubConfigData.winner_xp;
 							var looserXp = clubConfigData.looser_xp;
 							if(!!msg.winnerId) {
-								that.updatePlayer({
+								console.log('---Winner Player----')
+								dbLogger.updatePlayer({
 									xp: winnerXp,
 									award: winAmount,
 									winStreak: 1,
-									win: 1
+									win: 1,
+									playerId: msg.winnerId
 								})
 							}
 							if(!!msg.looserId) {
-								xp: looserXp
+								console.log('---Looser Player----')
+								dbLogger.updatePlayer({
+									xp: looserXp,
+									playerId: msg.looserId
+								})
 							}
 						})
 					});
@@ -382,6 +358,7 @@ Handler.prototype = {
 		});	
 	},
 
+	//Handle tournament in game messages from client
 	getMessage: function(msg, session, next) {
 		if((!!msg.messageId && msg.messageId != "") &&  !!msg.playerId && (!!msg.stage && msg.stage != "")) {
 			this.getPlayerAndChannel(session, function(player, channel) {

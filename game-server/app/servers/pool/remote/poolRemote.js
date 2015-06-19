@@ -17,6 +17,8 @@ var PoolRemote = function(app) {
 
 PoolRemote.prototype = {
 
+	//Find the relavent club for a player
+	//It must offer a new club if previous clubs have occupancies 2
 	findClub:function(clubConfigId, uid, cb) {
 		var that 			= this;
         freeClubs = false,
@@ -24,6 +26,8 @@ PoolRemote.prototype = {
 
       redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
       	if(!!typeData) {
+
+      		//Select a club (not with occupancy > 2)
       		if (typeData.club_type == "OneToOne") {
 	      		redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
 							if(data.length>0) {
@@ -45,6 +49,7 @@ PoolRemote.prototype = {
 						  }
 	          });
 			    } else {
+			    	//Select a club (not with occupancy > 8)
   					redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 7, -1, "limit", 0,  1, function(err, data){
   						redis.hmget("game_player:"+uid, "club_id", function(err, playerRoom){
   							if(!!playerRoom) {
@@ -82,6 +87,8 @@ PoolRemote.prototype = {
 
 	},
   
+	//Handle join club request from entryhadler 
+	//Serch for a relevant club then add this player in a channel
 	add: function(uid, sid, clubConfigId, playerIp, flag, cb) {
 		var that = this;
 		that.findClub(clubConfigId, uid, function(clubData) {
@@ -97,6 +104,10 @@ PoolRemote.prototype = {
 		});
 	},
 
+  //Handle request from above add message 
+  //Serch for a opponent with level +5 and -5 of requested player level
+  //Wait for 5 second or add bot as an opponent
+  //Bots and players are saved in redis with their login token
   addToClub: function(uid, sid, clubConfigId, clubId, flag, forceJoin, playerIp, next) {
 		var that 		= this,
 				redis 	= that.app.get("redis"),
@@ -146,12 +157,13 @@ PoolRemote.prototype = {
 			  		channel.board.resetTournament();
 			  	}
 			  	
-			  	//Get opponenet
+			  	//Get opponenet (either a player or bot)
 					redis.zadd("club_id:"+clubId, parseInt(playerDetails.player_level),  uid, function(err, data) {
 						that.getOpponent({ channel: channel, clubId: clubId, playerId: uid, sid: sid, playerLevel: parseInt(playerDetails.player_level), playerIp: playerIp}, function(responseData){
 							if(!!responseData ){
+
+								//If the game type is tournament then ready to add more bot players
 								if (channel.board.clubType == "Tournament") {
-									console.log('Bot added  - ' + channel.board.botAdded);
 									if(!channel.board.botAdded) {
 										channel.board.botAdded = true;
 										setTimeout(function(){
@@ -163,6 +175,7 @@ PoolRemote.prototype = {
 									}
 								}
 
+								//Adjust available and busy bots
 								if (responseData.isDummy == true){
 									redis.sadd("busy_bots", responseData.opponentId,  function(err, data){
 										redis.srem("available_bots", responseData.opponentId, function(err, data){
@@ -178,11 +191,22 @@ PoolRemote.prototype = {
 									});
 								}
 								
+								//Callback of this function
 								responseData.clubId = clubId;
 								responseData.clubConfigId = clubConfigId;
 								next(responseData);
 
-								//Add all waiting players into players
+								//Update players profile from here
+								redis.hgetall("club:"+clubId, function(err, data) {
+									if(!!data) {
+										console.log('Entry fees - ' + data.entry_fees);
+										dbLogger.updatePlayer({playerId: uid, gamePlayed: 1, deduce_amount: parseInt(data.entry_fees)});
+									} else {
+										dbLogger.updatePlayer({playerId: uid, gamePlayed: 1});
+									}
+								})
+
+								//Add all waiting players into players list
 								if(channel.board.playersToAdd.length > 0) {
 									_.each(channel.board.playersToAdd, function(player) {
 						      	channel.board.players.push(player);
@@ -202,6 +226,11 @@ PoolRemote.prototype = {
 	});
 	},
 
+  //Get relevant opponent for a requested players
+  //Opponent with level +5 and -5 with requested player
+  //If there are no players then add a bot player
+  //At the same time get players/bot profile details form Rails and 
+  //ready to send back to requested player in Join Club response
   getOpponent: function(msg, next) {
 
 		var that 					= this,
@@ -333,6 +362,7 @@ PoolRemote.prototype = {
   },
 
 
+  //Create a opponent response for Join Club request (send call back to getOpponent function)
   returnData: function(id, opid, opname, opxp, oplevel, opimage, opip, isdummy, isserver, device_avatar_id, next ){
 		next({
 			message: !isdummy ? "Opponent found!" : "Bot player added !",
@@ -351,11 +381,13 @@ PoolRemote.prototype = {
   },
 
 
+  //Used to send broadcast to any player through session / connected server
   sendMessageToUser: function(uid, serverId, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, "addPlayer"]}, function(data) {});
   },
 
 
+  //Handle request to remove a player from any channel
   kick: function(uid, sid, clubId, cb) {
 
 		var channel = this.channelService.getChannel(clubId, false),
@@ -370,11 +402,13 @@ PoolRemote.prototype = {
 		cb()
 	},
 
+	//Add all the event listeners from different server
 	addEventListers: function(channel) {
 		var that = this,
 				board = channel.board,
 				redis = that.app.get('redis');
 				
+		//Add player broadcast to send complete tournament fixture when players are adding
 		board.eventEmitter.on("addPlayer", function() {
 			msg = {};
 			msg.quarterFinal = board.quarterFinal;
@@ -392,6 +426,7 @@ PoolRemote.prototype = {
 			channel.pushMessage("addPlayer", msg);
 		});
 
+		//Game over broadcastto send updated tournament fixture
 		board.eventEmitter.on("gameOver", function() {
 			msg = {};
 			msg.quarterFinal = board.quarterFinal;

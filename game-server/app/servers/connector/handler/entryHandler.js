@@ -53,6 +53,7 @@ Handler.prototype.subscribe = function(msg, session, next) {
   next(null, result);
 };
 
+//Bind user with server session
 Handler.prototype.enter= function(msg, session, next) {
 	console.log(msg);
 	var that = this;
@@ -70,6 +71,8 @@ Handler.prototype.enter= function(msg, session, next) {
 	}
 	
 	session.bind(msg.login_token);
+
+	//Save server and session id for this player
 	redis.hmset("game_player:"+msg.login_token, "player_server_id", that.app.get('serverId'), "session_id", session.id);
 	session.on('closed', onUserLeave.bind(null, that.app));
 
@@ -80,10 +83,12 @@ Handler.prototype.enter= function(msg, session, next) {
 };
 
 
+//Handle join club request from client
 Handler.prototype.joinClub=function(msg, session, next) {
   var that = this;
   var board = null;
   that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
+    //Save club details in order to get channel for this player
     session.set("clubConfigId", msg.clubConfigId);
     session.set("clubId", data.clubId);
     session.push("clubConfigId", function(err) {
@@ -100,18 +105,7 @@ Handler.prototype.joinClub=function(msg, session, next) {
   });
 },
 
-Handler.prototype.sendMessage= function(msg, session, next) {
-	var that = this;
-	var redis = that.app.get("redis");
-	next(null, {});
-	// redis.hgetall("game_player:"+session.uid, function(err, data) {
-	// 	opponentId = data.opponentId;
-	// 	serverId = data.player_server_id;
-	// 	that.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [opponentId, msg, "generalProgress"]}, function(data) {
- //    });
-	// })
-};
-
+//Handle stand up request from client (Remove from attached channel)
 Handler.prototype.standUp= function(msg, session, next) {
 	var that = this;
 	that.app.rpc.pool.poolRemote.kick(session, session.uid, that.app.get('serverId'), session.get('clubId'), function() {
@@ -121,15 +115,18 @@ Handler.prototype.standUp= function(msg, session, next) {
 	});
 };
 
+//Handle force close requests from client
 var onUserLeave = function(app, session) {
 	if(!session || !session.uid) {
 		return;
 	}
+	//Log out this user from Rails 
 	app.get('redis').del("game_players" , "game_player:"+session.uid, function(err, data) {
 		backendFetcher.delete("/api/v1/sessions/"+session.uid+".json", {}, app, function(data) {
 			console.log(data.message);
 		});
 	})
+	//Remove from channel also
 	app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('clubId'), null);
 };
 
