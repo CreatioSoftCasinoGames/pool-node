@@ -109,12 +109,12 @@ Handler.prototype = {
 						}
 					});
 					next(null, {
-						success: true
+						success: true,
 						message: "User has been connected with facebook!"
 					})
 				} else {
 					next(null, {
-						success: true
+						success: true,
 						message: "User has been connected with facebook!"
 					})
 				}
@@ -179,7 +179,11 @@ Handler.prototype = {
 	updateProfile: function(msg, session, next){
 		var that = this;
 
-		if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
+		if(!!msg.current_coins_balance && !!msg.total_games_played){
+			dbLogger.updateGame({playerId: session.uid, current_coins_balance: msg.current_coins_balance, total_games_played: msg.total_games_played})
+		}else if(!!msg.ball_potted && !!msg.strike_count && !!msg.accuracy) {
+			dbLogger.updateGame({playerId: session.uid, ball_potted: msg.ball_potted, strike_count: msg.strike_count, accuracy: msg.accuracy})
+		} else if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
 			dbLogger.updateGame({playerId: session.uid,
 			                     win_streak:  msg.win_streak,
                            total_coins_won:  msg.total_coins_won,
