@@ -1,5 +1,6 @@
 var _ = require('underscore');
 var events = require('events');
+var dbLogger = require('./dbLogger.js');
 
 var Board = function(clubId, redis, app, clubType) {
 	this.clubId 		 		= clubId;
@@ -39,11 +40,13 @@ Board.prototype = {
 
 
 	addPlayer: function(playerId, isDummy) {
+		dbLogger.updateProfile({playerId: playerId, game_played: 1;})
 		var that = this;
 		var player = new Player(playerId, isDummy, that.redis, function(data) {
 				var opponentFound = false;
 	    	if (that.clubType == "OneToOne") {
 			    that.playersToAdd.push(player);
+
 
 			  //   that.redis.hgetall("club:"+that.clubId, function(err, findClub) {
 					// 	that.redis.zincrby("club_config_occupancy:"+findClub.club_config_id, 1, "club:"+that.clubId, function(err, newData) {

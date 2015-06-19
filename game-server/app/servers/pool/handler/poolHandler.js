@@ -176,72 +176,81 @@ Handler.prototype = {
   },
 
 
+	updatePlayer: function(msg, next) {
+		details.xp 						= !!msg.xp ? msg.xp : 0;
+		details.win_streak 		= !!details.winStreak ? details.winStreak : 0;
+		details.award 				= !!details.award ? details.award : 0;
+		details.win 					= !!details.win ? details.win : 0;
+		details.game_played 	= !!details.gamePlayed ? details.gamePlayed : 0;
+		console.log(details);
+
+		dbLogger.updateProfile({playerId: session.uid, details: details;})
+	},
+	//This worker is used to update user's profile through Rails (sidekiq)
 	updateProfile: function(msg, session, next){
-		var that = this;
+		var that = this,
+		details	=	{};
 
-		if(!!msg.current_coins_balance && !!msg.total_games_played){
-			dbLogger.updateGame({playerId: session.uid, current_coins_balance: msg.current_coins_balance, total_games_played: msg.total_games_played})
-		}else if(!!msg.ball_potted && !!msg.strike_count && !!msg.accuracy) {
-			dbLogger.updateGame({playerId: session.uid, ball_potted: msg.ball_potted, strike_count: msg.strike_count, accuracy: msg.accuracy})
-		} else if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
-			dbLogger.updateGame({playerId: session.uid,
-			                     win_streak:  msg.win_streak,
-                           total_coins_won:  msg.total_coins_won,
-                           win_percentage:  msg.win_percentage,
-                           won_count:  msg.won_count,
-                           xp:  msg.xp,
-                           current_coins_balance: msg.current_coins_balance 
-			                   })
-		}else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0) && (msg.accuracy || msg.accuracy == 0)) {
-			dbLogger.updateGame({playerId: session.uid,
-				                   ball_potted:  msg.ball_potted,
-				                   strike_count: msg.strike_count,
-				                   accuracy: msg.accuracy
-			                   })
+		details.ball_potted 	= !!msg.ball_potted ? msg.ball_potted : 0;
+		details.strike_count 	= !!msg.strike_count ? msg.strike_count : 0;
+		details.xp 						= !!msg.xp ? msg.xp : 0;
+		details.win_streak 		= !!details.winStreak ? details.winStreak : 0;
+		details.award 				= !!details.award ? details.award : 0;
+		details.win 					= !!details.win ? details.win : 0;
+		details.game_played 	= !!details.gamePlayed ? details.gamePlayed : 0;
+		console.log(details);
 
-		}else if ((msg.total_coins_won || msg.total_coins_won == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0)){
-		  dbLogger.updateGame({playerId: session.uid,
-			                     total_coins_won:  msg.total_coins_won,
-		                       current_coins_balance:  msg.current_coins_balance
-		                     })	
+		dbLogger.updateProfile({playerId: session.uid, details: details;})
+		
+		// if(!!msg.current_coins_balance && !!msg.total_games_played){
+		// 	dbLogger.updateGame({playerId: session.uid, current_coins_balance: msg.current_coins_balance, total_games_played: msg.total_games_played})
+		// }else if(!!msg.ball_potted && !!msg.strike_count && !!msg.accuracy) {
+		// 	dbLogger.updateGame({playerId: session.uid, ball_potted: msg.ball_potted, strike_count: msg.strike_count, accuracy: msg.accuracy})
+		// } else if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
+		// 	dbLogger.updateGame({playerId: session.uid, win_streak:  msg.win_streak, total_coins_won:  msg.total_coins_won, win_percentage:  msg.win_percentage,
+  //                          won_count:  msg.won_count,
+  //                          xp:  msg.xp,
+  //                          current_coins_balance: msg.current_coins_balance 
+		// 	                   })
+		// }else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0) && (msg.accuracy || msg.accuracy == 0)) {
+		// 	dbLogger.updateGame({playerId: session.uid,
+		// 		                   ball_potted:  msg.ball_potted,
+		// 		                   strike_count: msg.strike_count,
+		// 		                   accuracy: msg.accuracy
+		// 	                   })
 
-		}else if(msg.total_coins_won || msg.total_coins_won == 0){
-			dbLogger.updateGame({playerId: session.uid,
-			                     total_coins_won:  msg.total_coins_won
-			                   })
+		// }else if ((msg.total_coins_won || msg.total_coins_won == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0)){
+		//   dbLogger.updateGame({playerId: session.uid,
+		// 	                     total_coins_won:  msg.total_coins_won,
+		//                        current_coins_balance:  msg.current_coins_balance
+		//                      })	
+
+		// }else if(msg.total_coins_won || msg.total_coins_won == 0){
+		// 	dbLogger.updateGame({playerId: session.uid,
+		// 	                     total_coins_won:  msg.total_coins_won
+		// 	                   })
 
 		
-    }else if(msg.device_avatar_id){
-			dbLogger.updateGame({playerId: session.uid, device_avatar_id:  msg.device_avatar_id})
-
-		}else if (msg.total_coins_won){
-			dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
-
-		}else if (msg.current_coins_balance){
-			dbLogger.updateGame({playerId: session.uid, current_coins_balance:  msg.current_coins_balance})	
-
-		}else if (msg.total_games_played){
-			dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
-
-		}else if (msg.rank){
-			dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
-
-		}else if (msg.total_time_in_game){
-			dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
-
-		}else if (msg.current_level){
-			dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
-
-		}else if (msg.flag){
-			dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
-			
-		}else if (msg.country){
-			dbLogger.updateGame({playerId: session.uid, country:  msg.country})
-		
-		}
-
+  //   }else if(msg.device_avatar_id){
+		// 	dbLogger.updateGame({playerId: session.uid, device_avatar_id:  msg.device_avatar_id})
+		// }else if (msg.total_coins_won){
+		// 	dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
+		// }else if (msg.current_coins_balance){
+		// 	dbLogger.updateGame({playerId: session.uid, current_coins_balance:  msg.current_coins_balance})	
+		// }else if (msg.total_games_played){
+		// 	dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
+		// }else if (msg.rank){
+		// 	dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
+		// }else if (msg.total_time_in_game){
+		// 	dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
+		// }else if (msg.current_level){
+		// 	dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
+		// }else if (msg.flag){
+		// 	dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
+		// }else if (msg.country){
+		// 	dbLogger.updateGame({playerId: session.uid, country:  msg.country})
+		// }
 		next();
-
 	},
 
 	chat: function(msg, session, next) {
@@ -294,6 +303,25 @@ Handler.prototype = {
 
 				if(channel.board.clubType == "OneToOne"){
 					channel.board.players = [];
+					redis.hgetall("club:"+clubId, function(err, clubData) {
+						var clubConfigId = clubData.club_config_id;
+						redis.hgetall("club_config:"+clubConfigId, function(err, clubConfigData) {
+							var winAmount = clubConfigData.winner_amount;
+							var winnerXp = clubConfigData.winner_xp;
+							var looserXp = clubConfigData.looser_xp;
+							if(!!msg.winnerId) {
+								that.updatePlayer({
+									xp: winnerXp,
+									award: winAmount,
+									winStreak: 1,
+									win: 1
+								})
+							}
+							if(!!msg.looserId) {
+								xp: looserXp
+							}
+						})
+					});
 					next();
 				} else {
 					if(!msg.stage || msg.stage == "null" || msg.stage == ""){

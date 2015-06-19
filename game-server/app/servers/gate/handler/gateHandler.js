@@ -128,6 +128,9 @@ handler.getHostAndPort = function(msg, next) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
     msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "player_ip", msg.ip, "device_avatar_id", parseInt(msg.user.device_avatar_id ))
+    // backendFetcher.get("/api/v1/users"+msg.user.login_token+".json", {}, this.app, function(profile) {
+    // 	msg.redis.hmset("game_player:"+profile.login_token, "player_id", profile.login_token, "player_level", profile.current_level, "player_name", profile.full_name, "player_xp", profile.xp, "player_image", profile.image_url, "playing", false, "player_ip", msg.ip, "device_avatar_id", parseInt(profile.device_avatar_id), "win_streak", )
+    // });
     next({
       code: 200,
       host: res.host,
