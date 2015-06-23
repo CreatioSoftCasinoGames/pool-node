@@ -135,6 +135,42 @@ Handler.prototype = {
 		}
 	},
 
+	//Handle request for power-up used
+	//Send broadcast to opponent player
+	powerupUsed: function(msg, session, next) {
+
+		var that 				= this,
+				opponentId 	= !!msg.opponentId ? msg.opponentId : null;
+				redis 			=	that.app.get("redis");
+
+		if(!!opponentId) {
+			msg = _.omit(msg, 'opponentId');
+			console.log(session.uid);
+			redis.hmget("game_player:"+opponentId, "player_server_id", function(err, serverId) {
+				console.log(serverId);
+				if(!!serverId && serverId.length > 0) {
+					console.log(msg)
+					that.sendMessageToUser(opponentId, serverId[0], "powerupUsed", msg);
+					next({
+						success: true
+					});
+				} else {
+					console.error('No server found for player - '+session.uid+' while powerup used!');
+					next({
+						success: false,
+						message: 'No server found for player - '+session.uid+' while powerup used!'
+					});
+				}
+			});
+		} else {
+			console.error('Opponent Id not found while powerup used!')
+			next({
+				success: false,
+				message: 'Opponent Id not found while powerup used!'
+			});
+		}
+	},
+
 	//Send a broadcast to player from rpcInvoke
 	sendMessageToUser: function(uid, serverId, route, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});
@@ -142,7 +178,7 @@ Handler.prototype = {
 
 	//Handle online player count request from client
 	//Online players stored in redis
-	etOnlinePlayers: function(msg, session, next) {
+	getOnlinePlayers: function(msg, session, next) {
     var that = this;
     var redis = that.app.get("redis");
     if (msg.gameType == "OneToOne") {
@@ -154,7 +190,7 @@ Handler.prototype = {
           })
         });
       })
-    }else {
+    }else if (msg.gameType == "Tournament") {
       redis.smembers("tournament_room_players", function(err, data) {
         that.getPlayerOnline({data: data, redis: redis}, function(onlinePlayer) {
           next(null, {
@@ -163,6 +199,11 @@ Handler.prototype = {
           })
         })
       });
+    } else {
+    	next(null, {
+      success: true,
+      onlinePlayer: []
+    })
     }
   },
 

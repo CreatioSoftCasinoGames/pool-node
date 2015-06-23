@@ -115,6 +115,63 @@ Handler.prototype.standUp= function(msg, session, next) {
 	});
 };
 
+//Handle challenge/revenge request from Client
+Handler.prototype.revengeChallenge= function(msg, session, next) {
+
+	var that 					= this,
+			gameType 			= !!msg.gameType ? msg.gameType : null,
+			opponentId 		= !!msg.opponentId ? msg.opponentId : null,
+			redis 				= that.app.get("redis"),
+			broadcast 		=	null,
+			clubConfigId 	= !!msg.clubConfigId ? msg.clubConfigId : null;
+
+	if(!!gameType && !!opponentId && !!clubConfigId) {
+
+		//Handle different cases for revenge and challenge
+		redis.hgetall("game_player:"+opponentId, function(err, playerDetails){
+			if(!!playerDetails) {
+				broadcast = gameType == "revenge" ? "revenge" : "challenge";
+				message = {};
+				message.playerId = session.uid;
+				message.opponentId = opponentId;
+				message.clubConfigId = clubConfigId;
+				if(!!playerDetails.player_server_id) {
+					that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
+					next({
+						success: true
+					})
+				} else {
+					console.error('Server for player '+opponentId+' not found!');
+					next({
+						success: false,
+						message: 'Server for player '+opponentId+' not found!'
+					})
+				}
+			} else {
+				console.error('Player '+opponentId+' details not found in redis!');
+				next({
+					success: false,
+					message: 'Player '+opponentId+' details not found in redis!'
+				})
+			}
+		});
+
+	} else {
+		console.error('Parameter missing while revenge or challenge!')
+		console.log(msg);
+		next({
+			success: false,
+			message: 'Parameter missing while revenge or challenge!',
+			data: msg
+		})
+	}
+};
+
+//Send a broadcast to player from rpcInvoke
+Handler.prototype.sendMessageToUser = function(uid, serverId, route, msg) {
+ this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});
+};
+
 //Handle force close requests from client
 var onUserLeave = function(app, session) {
 	if(!session || !session.uid) {
