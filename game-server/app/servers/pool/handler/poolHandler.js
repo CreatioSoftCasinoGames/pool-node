@@ -171,6 +171,89 @@ Handler.prototype = {
 		}
 	},
 
+	//Handle Revenge / Challeneg request acceptance (start the game)
+	requestAccepted: function(msg, session, next) {
+		var that = this,
+		requestId = !!msg.requestId ? msg.requestId : null;
+
+		if(!!requestId) {
+			backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
+				console.log('Challenge has been accepted !')
+			})
+			next(null, {
+				success: true
+			});
+		} else {
+			console.error('Request id not found while accepting invitation!')
+			next(null, {
+				success: false,
+				message: 'Request id not found while accepting invitation!'
+			});
+		}
+	},
+
+	//Handle Revenge / Challenge for requested user (offline players)
+	acceptGameInvitation: function(msg, session, next) {
+
+		var that			 	= this,
+				opponentId 	= !!msg.opponentId ? msg.opponentId : null,
+				requestId 	= !!msg.requestId ? msg.requestId : null,
+				invitationType = !!msg.invitationType ? msg.invitationType : null,
+				redis 			= that.app.get("redis"),
+				broadcast 	= "gameInvitation",
+				message 		= {};
+
+		if(!!opponentId && !!requestId) {
+			redis.hgetall("game_player:"+opponentId, function(err, playerDetails){
+				if(!!playerDetails) {
+					if(!!playerDetails.player_server_id) {
+						//If player is online
+						if(!!playerDetails.online && playerDetails.online = "true") {
+							message.playerId = session.uid;
+							message.invitationType = invitationType;
+							message.requestId = requestId;
+							that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
+							next({
+								success: true
+							})
+						} else {
+							console.error('Player '+opponentId+' is offline while '+invitationType+' !')
+							backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
+								console.log('Challenge has been accepted !')
+							});
+							next({
+								success: false,
+								message: 'Player is offline!'
+							});
+						}
+					} else {
+						console.error('Server for player '+opponentId+' not found!');
+						next({
+							success: false,
+							message: 'Server for player '+opponentId+' not found!'
+						})
+					}
+				} else {
+					console.error('Player '+opponentId+' details not found in redis / or offline!');
+					backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
+						console.log('Challenge has been accepted !')
+					});
+					next({
+						success: false,
+						message: 'Player '+opponentId+' details not found in redis / or offline!'
+					});
+				}
+			});
+		} else {
+			console.error('opponentId or requestId not found while accepting game invitation!')
+			console.log(msg)
+			next(null, {
+				success: false,
+				message: 'opponentId or requestId not found while accepting game invitation!'
+			})
+		}
+	},
+
 	//Send a broadcast to player from rpcInvoke
 	sendMessageToUser: function(uid, serverId, route, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});

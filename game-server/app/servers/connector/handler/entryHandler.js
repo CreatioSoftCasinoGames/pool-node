@@ -136,10 +136,22 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 				message.opponentId = opponentId;
 				message.clubConfigId = clubConfigId;
 				if(!!playerDetails.player_server_id) {
-					that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
-					next({
-						success: true
-					})
+					//If player is online
+					if(!!playerDetails.online && playerDetails.online = "true") {
+						that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
+						next({
+							success: true
+						})
+					} else {
+						console.error('Player '+opponentId+' is offline while '+gameType+' !')
+						backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
+							console.log('Game request detail saved in database!');
+						});
+						next({
+							success: false,
+							message: 'Player is offline!'
+						});
+					}
 				} else {
 					console.error('Server for player '+opponentId+' not found!');
 					next({
@@ -148,10 +160,13 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 					})
 				}
 			} else {
-				console.error('Player '+opponentId+' details not found in redis!');
+				console.error('Player '+opponentId+' details not found in redis / or offline!');
+				backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
+					console.log('Game request detail saved in database!');
+				});
 				next({
 					success: false,
-					message: 'Player '+opponentId+' details not found in redis!'
+					message: 'Player '+opponentId+' details not found in redis / or offline!'
 				})
 			}
 		});
