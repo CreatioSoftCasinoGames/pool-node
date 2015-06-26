@@ -24,7 +24,8 @@ app.set('redisPubSubClient', redisPubSubClient);
 
 
 if(app.get('serverId') == "connector-server-1") {
-  var connector = app.components.__connector__;
+  // var connector = app.components.__connector__;
+  // console.log(connector);
   redisPubSubClient.on("message", function(channel, message) {
     if(!!message) {
       console.log(message);
@@ -34,11 +35,12 @@ if(app.get('serverId') == "connector-server-1") {
         console.log('========= New friend online ==========');
         if(!!app.get('sessionService')) {
           if(!!message.send_to_token) {
+            var connector = app.components.__connector__;
             console.log('Send giftReceived broadcast to  - '+message.send_to_token+'!');
             if(!!app.get('sessionService').getByUid(message.send_to_token) && app.get('sessionService').getByUid(message.send_to_token).length > 0) {
-              connector.send(null, "giftReceived", {message: message}, [this.sessionService.getByUid(message.send_to_token)[0].id], {}, function(err) {
+              connector.send(null, "giftReceived", {message: message}, [app.get('sessionService').getByUid(message.send_to_token)[0].id], {}, function(err) {
                 console.log('Braodcast giftReceived to  - '+uid+' has been successfully sent !');
-                cb(null)
+                // cb(null)
               });
             } else {
               console.error('Player session not found on server !');
@@ -55,11 +57,12 @@ if(app.get('serverId') == "connector-server-1") {
         if(!!app.get('sessionService')) {
           if(!!message.friends_token && message.friends_token.length > 0) {
             _.each(message.friends_token, function(uid){
+              var connector = app.components.__connector__;
               console.log('Send friendOnline broadcast to  - '+uid+'!');
               if(!!app.get('sessionService').getByUid(uid) && app.get('sessionService').getByUid(uid).length > 0) {
-                connector.send(null, "friendOnline", {friendId: message.login_token}, [this.sessionService.getByUid(uid)[0].id], {}, function(err) {
+                connector.send(null, "friendOnline", {friendId: message.login_token}, [app.get('sessionService').getByUid(uid)[0].id], {}, function(err) {
                   console.log('Braodcast friendOnline to  - '+uid+' has been successfully sent !');
-                  cb(null)
+                  // cb(null)
                 });
               } else {
                 console.error('Player session not found on server !');
@@ -76,11 +79,12 @@ if(app.get('serverId') == "connector-server-1") {
         console.log('========= A new friend added ==========');
         if(!!app.get('sessionService')) {
           if(!!message.login_token){
+            var connector = app.components.__connector__;
             console.log('Send friendAdded broadcast to  - '+message.login_token+'!');
             if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
-              connector.send(null, "friendAdded", {friendId: message.friend_token}, [this.sessionService.getByUid(message.login_token)[0].id], {}, function(err) {
+              connector.send(null, "friendAdded", {friendId: message.friend_token}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
                 console.log('Braodcast friendAdded to  - '+message.login_token+' has been successfully sent !');
-                cb(null)
+                // cb(null)
               });
             } else {
               console.error('Player session not found on server !');
@@ -93,9 +97,9 @@ if(app.get('serverId') == "connector-server-1") {
           if(!!message.friend_token) {
             console.log('Send friendAdded broadcast to  - '+message.friend_token+'!');
             if(!!app.get('sessionService').getByUid(message.friend_token) && app.get('sessionService').getByUid(message.friend_token).length > 0) {
-              connector.send(null, "friendAdded", {friendId: message.login_token}, [this.sessionService.getByUid(message.friend_token)[0].id], {}, function(err) {
+              connector.send(null, "friendAdded", {friendId: message.login_token}, [app.get('sessionService').getByUid(message.friend_token)[0].id], {}, function(err) {
                 console.log('Braodcast friendAdded to  - '+message.friend_token+' has been successfully sent !');
-                cb(null)
+                // cb(null)
               });
             } else {
               console.error('Player session not found on server !');
