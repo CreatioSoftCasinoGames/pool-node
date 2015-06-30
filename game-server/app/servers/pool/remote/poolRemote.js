@@ -22,7 +22,8 @@ PoolRemote.prototype = {
 	findClub:function(clubConfigId, uid, cb) {
 		var that 			= this;
         freeClubs = false,
-				redis 		= that.app.get("redis");
+				redis 		= that.app.get("redis"),
+				playerId 	= uid;
 
       redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
       	if(!!typeData) {
