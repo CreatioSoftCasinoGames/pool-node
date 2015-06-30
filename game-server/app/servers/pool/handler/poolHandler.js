@@ -22,6 +22,7 @@ var Handler = function(app) {
 
 Handler.prototype = {
 
+	//Handle get club config details from client (Data will be fetched form Rails)
 	getClubConfigs: function(msg, session, next) {
 		var that = this;
 		backendFetcher.get("/api/v1/club_configs.json", {club_type: msg.club_type}, that.app, function(data) {
@@ -39,6 +40,7 @@ Handler.prototype = {
 		})
 	},
 
+	//Get a player's channel using clubId 
 	getPlayerAndChannel: function(session, cb) {
 		var that = this;
 		var channel = that.channelService.getChannel(session.get('clubId'), false);
@@ -66,6 +68,7 @@ Handler.prototype = {
 		})	
 	},
 
+	//Handle general progress request from client
 	general: function(msg, session, next) {
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
@@ -77,6 +80,7 @@ Handler.prototype = {
 	},
 
 
+	//Simply send back what client send (remove some unuseful keys from object)
 	generalProgress: function(channel, playerId, data) {
 		data = _.omit(data, 'timestamp', '__route__');
 		channel.pushMessage("generalProgress", {
@@ -85,6 +89,178 @@ Handler.prototype = {
 		});
 	},
 
+	//Handle facebook connect request from client
+	connectFacebook: function(msg, session, next){
+		var that 			= this,
+				redis 		= that.app.get("redis"),
+				firstName = "";
+				lastName 	= "";
+				email 		= ""
+
+		if(!!msg.fb_id && !!msg.fb_friends_list) {
+
+			firstName = !!msg.first_name && msg.first_name != "" ? msg.first_name : "Guest User";
+			lastName 	= !!msg.last_name && msg.last_name != "" ? msg.last_name : "";
+			email 		= !!msg.email && msg.email != "" ? msg.email : null;
+
+			backendFetcher.put("/api/v1/users/"+session.uid+"/connect_facebook", {fb_id: msg.fb_id, first_name: firstName, last_name: lastName, email: email, fb_friends_list: msg.fb_friends_list}, that.app, function(data) {
+				if(!!data.login_token) {
+					//Send broadcast to this previous fb user
+					redis.hmget("game_player:"+session.uid, "player_server_id", function(err, serverId){
+						if(!!serverId) {
+							that.sendMessageToUser(session.uid, serverId, "multipleLogin", "Logged in with other device!");
+						} else {
+							console.error('Server id not found for player - '+session.uid);
+						}
+					});
+					next(null, {
+						success: true,
+						message: "User has been connected with facebook!"
+					})
+				} else {
+					next(null, {
+						success: true,
+						message: "User has been connected with facebook!"
+					})
+				}
+			});
+		} else {
+			console.error('Parameter mismatch!');
+			console.log(msg);
+			next(null, {
+				success: false,
+				message: 'Parameter mismatch! (Require fb_id and fb_friends_list)',
+				params: msg
+			})
+		}
+	},
+
+	//Handle request for power-up used
+	//Send broadcast to opponent player
+	powerupUsed: function(msg, session, next) {
+
+		var that 				= this,
+				opponentId 	= !!msg.opponentId ? msg.opponentId : null;
+				redis 			=	that.app.get("redis");
+
+		if(!!opponentId) {
+			msg = _.omit(msg, 'opponentId');
+			console.log(session.uid);
+			redis.hmget("game_player:"+opponentId, "player_server_id", function(err, serverId) {
+				console.log(serverId);
+				if(!!serverId && serverId.length > 0) {
+					console.log(msg)
+					that.sendMessageToUser(opponentId, serverId[0], "powerupUsed", msg);
+					next({
+						success: true
+					});
+				} else {
+					console.error('No server found for player - '+session.uid+' while powerup used!');
+					next({
+						success: false,
+						message: 'No server found for player - '+session.uid+' while powerup used!'
+					});
+				}
+			});
+		} else {
+			console.error('Opponent Id not found while powerup used!')
+			next({
+				success: false,
+				message: 'Opponent Id not found while powerup used!'
+			});
+		}
+	},
+
+	//Handle Revenge / Challeneg request acceptance (start the game)
+	requestAccepted: function(msg, session, next) {
+		var that = this,
+		requestId = !!msg.requestId ? msg.requestId : null;
+
+		if(!!requestId) {
+			backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
+				console.log('Challenge has been accepted !')
+			})
+			next(null, {
+				success: true
+			});
+		} else {
+			console.error('Request id not found while accepting invitation!')
+			next(null, {
+				success: false,
+				message: 'Request id not found while accepting invitation!'
+			});
+		}
+	},
+
+	//Handle Revenge / Challenge for requested user (offline players)
+	acceptGameInvitation: function(msg, session, next) {
+
+		var that			 	= this,
+				opponentId 	= !!msg.opponentId ? msg.opponentId : null,
+				requestId 	= !!msg.requestId ? msg.requestId : null,
+				invitationType = !!msg.invitationType ? msg.invitationType : null,
+				redis 			= that.app.get("redis"),
+				broadcast 	= "gameInvitation",
+				message 		= {};
+
+		if(!!opponentId && !!requestId) {
+			redis.hgetall("game_player:"+opponentId, function(err, playerDetails){
+				if(!!playerDetails) {
+					if(!!playerDetails.player_server_id) {
+						//If player is online
+						if(!!playerDetails.online && playerDetails.online = "true") {
+							message.playerId = session.uid;
+							message.invitationType = invitationType;
+							message.requestId = requestId;
+							that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
+							next({
+								success: true
+							})
+						} else {
+							console.error('Player '+opponentId+' is offline while '+invitationType+' !')
+							backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
+								console.log('Challenge has been accepted !')
+							});
+							next({
+								success: false,
+								message: 'Player is offline!'
+							});
+						}
+					} else {
+						console.error('Server for player '+opponentId+' not found!');
+						next({
+							success: false,
+							message: 'Server for player '+opponentId+' not found!'
+						})
+					}
+				} else {
+					console.error('Player '+opponentId+' details not found in redis / or offline!');
+					backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
+						console.log('Challenge has been accepted !')
+					});
+					next({
+						success: false,
+						message: 'Player '+opponentId+' details not found in redis / or offline!'
+					});
+				}
+			});
+		} else {
+			console.error('opponentId or requestId not found while accepting game invitation!')
+			console.log(msg)
+			next(null, {
+				success: false,
+				message: 'opponentId or requestId not found while accepting game invitation!'
+			})
+		}
+	},
+
+	//Send a broadcast to player from rpcInvoke
+	sendMessageToUser: function(uid, serverId, route, msg) {
+   this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});
+  },
+
+	//Handle online player count request from client
+	//Online players stored in redis
 	getOnlinePlayers: function(msg, session, next) {
     var that = this;
     var redis = that.app.get("redis");
@@ -97,7 +273,7 @@ Handler.prototype = {
           })
         });
       })
-    }else {
+    }else if (msg.gameType == "Tournament") {
       redis.smembers("tournament_room_players", function(err, data) {
         that.getPlayerOnline({data: data, redis: redis}, function(onlinePlayer) {
           next(null, {
@@ -106,9 +282,15 @@ Handler.prototype = {
           })
         })
       });
+    } else {
+    	next(null, {
+      success: true,
+      onlinePlayer: []
+    })
     }
   },
 
+  //Get online players form every instances of all room configs
   getPlayerOnline: function(msg, next) {
     var totalData = 0;
     var onlinePlayer = [];
@@ -127,70 +309,39 @@ Handler.prototype = {
   },
 
 
-	updateProfile: function(msg, session, next){
-		var that = this;
-
-		if((msg.win_streak || msg.win_streak == 0) && (msg.total_coins_won || msg.total_coins_won == 0) && (msg.win_percentage || msg.win_percentage == 0) && (msg.won_count || msg.won_count == 0) && (msg.xp || msg.xp == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0) ){
-			dbLogger.updateGame({playerId: session.uid,
-			                     win_streak:  msg.win_streak,
-                           total_coins_won:  msg.total_coins_won,
-                           win_percentage:  msg.win_percentage,
-                           won_count:  msg.won_count,
-                           xp:  msg.xp,
-                           current_coins_balance: msg.current_coins_balance 
-			                   })
-		}else if((msg.ball_potted || msg.ball_potted == 0) && (msg.strike_count || msg.strike_count == 0) && (msg.accuracy || msg.accuracy == 0)) {
-			dbLogger.updateGame({playerId: session.uid,
-				                   ball_potted:  msg.ball_potted,
-				                   strike_count: msg.strike_count,
-				                   accuracy: msg.accuracy
-			                   })
-
-		}else if ((msg.total_coins_won || msg.total_coins_won == 0) && (msg.current_coins_balance || msg.current_coins_balance == 0)){
-		  dbLogger.updateGame({playerId: session.uid,
-			                     total_coins_won:  msg.total_coins_won,
-		                       current_coins_balance:  msg.current_coins_balance
-		                     })	
-
-		}else if(msg.total_coins_won || msg.total_coins_won == 0){
-			dbLogger.updateGame({playerId: session.uid,
-			                     total_coins_won:  msg.total_coins_won
-			                   })
-
-		
-    }else if(msg.device_avatar_id){
-			dbLogger.updateGame({playerId: session.uid, device_avatar_id:  msg.device_avatar_id})
-
-		}else if (msg.total_coins_won){
-			dbLogger.updateGame({playerId: session.uid, total_coins_won:  msg.total_coins_won})
-
-		}else if (msg.current_coins_balance){
-			dbLogger.updateGame({playerId: session.uid, current_coins_balance:  msg.current_coins_balance})	
-
-		}else if (msg.total_games_played){
-			dbLogger.updateGame({playerId: session.uid, total_games_played:  msg.total_games_played})
-
-		}else if (msg.rank){
-			dbLogger.updateGame({playerId: session.uid, rank:  msg.rank})
-
-		}else if (msg.total_time_in_game){
-			dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
-
-		}else if (msg.current_level){
-			dbLogger.updateGame({playerId: session.uid, current_level:  msg.current_level})
-
-		}else if (msg.flag){
-			dbLogger.updateGame({playerId: session.uid, flag:  msg.flag})
-			
-		}else if (msg.country){
-			dbLogger.updateGame({playerId: session.uid, country:  msg.country})
-		
-		}
-
-		next();
-
+	//Handle request to update profile (from this file)
+	updatePlayer: function(msg, next) {
+		var details = {};
+		layerId = msg.playerId;
+		details.xp 						= !!msg.xp ? msg.xp : 0;
+		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
+		details.award 				= !!msg.award ? msg.award : 0;
+		details.win 					= !!msg.win ? msg.win : 0;
+		details.game_played 	= !!msg.gamePlayed ? msg.gamePlayed : 0;
+		dbLogger.updateGame({playerId: playerId, details: details})
 	},
 
+	//This worker is used to update user's profile through Rails (sidekiq)
+	updateProfile: function(msg, session, next){
+		var that = this,
+		details	=	{};
+
+		details.ball_potted 	= !!msg.ball_potted ? msg.ball_potted : 0;
+		details.strike_count 	= !!msg.strike_count ? msg.strike_count : 0;
+		details.xp 						= !!msg.xp ? msg.xp : 0;
+		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
+		details.award 				= !!msg.award ? msg.award : 0;
+		details.win 					= !!msg.win ? msg.win : 0;
+		details.game_played 	= !!msg.gamePlayed ? msg.gamePlayed : 0;
+
+		dbLogger.updateGame({playerId: session.uid, details: details})
+		// }else if (msg.total_time_in_game){
+		// 	dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
+		// }
+		next();
+	},
+
+	//Handle chat messages request from client
 	chat: function(msg, session, next) {
 		var that = this;
 		that.getPlayerAndChannel(session, function(player, channel) {
@@ -212,6 +363,9 @@ Handler.prototype = {
 		});		
 	},
 
+	//Handle game over request from client
+	//OneToOne - Simple update winners and loosers profile update
+	//Tournament - Update fixture by sending players from Quarter to Semi and Semi to final if winner
 	gameOver: function(msg, session, next) {
 		if(!msg.winnerId || msg.winnerId == "null" || msg.winnerId == ""){
 			console.error('Parameters mismatch!');
@@ -241,6 +395,33 @@ Handler.prototype = {
 
 				if(channel.board.clubType == "OneToOne"){
 					channel.board.players = [];
+					redis.hgetall("club:"+clubId, function(err, clubData) {
+						var clubConfigId = clubData.club_config_id;
+
+						//Update winner and loosers profile 
+						redis.hgetall("club_config:"+clubConfigId, function(err, clubConfigData) {
+							var winAmount = clubConfigData.winner_amount;
+							var winnerXp = clubConfigData.winner_xp;
+							var looserXp = clubConfigData.looser_xp;
+							if(!!msg.winnerId) {
+								console.log('---Winner Player----')
+								dbLogger.updatePlayer({
+									xp: winnerXp,
+									award: winAmount,
+									winStreak: 1,
+									win: 1,
+									playerId: msg.winnerId
+								})
+							}
+							if(!!msg.looserId) {
+								console.log('---Looser Player----')
+								dbLogger.updatePlayer({
+									xp: looserXp,
+									playerId: msg.looserId
+								})
+							}
+						})
+					});
 					next();
 				} else {
 					if(!msg.stage || msg.stage == "null" || msg.stage == ""){
@@ -301,6 +482,7 @@ Handler.prototype = {
 		});	
 	},
 
+	//Handle tournament in game messages from client
 	getMessage: function(msg, session, next) {
 		if((!!msg.messageId && msg.messageId != "") &&  !!msg.playerId && (!!msg.stage && msg.stage != "")) {
 			this.getPlayerAndChannel(session, function(player, channel) {
