@@ -89,6 +89,10 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
       console.log(data);
     })
 
+    window.pomelo.on("friendAdded", function(data) {
+      alert("New friend added - " + data.friendId)
+    })
+
     window.pomelo.on("gameOver", function(data) {
       console.log(data);
     })

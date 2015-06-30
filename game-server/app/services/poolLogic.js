@@ -1,9 +1,11 @@
 var _ = require('underscore');
 var events = require('events');
+var dbLogger = require('./dbLogger.js');
 
-var Board = function(clubId, redis, clubType) {
+var Board = function(clubId, redis, app, clubType) {
 	this.clubId 		 		= clubId;
 	this.redis 					= redis;
+	this.app 						=	app;
 	this.clubType    		= clubType;
 	this.waitingTime 		=	5000;
 	this.addbotInterval	=	2000;
@@ -19,7 +21,8 @@ Board.prototype = {
 	init: function() {
 		this.players 							= [];
 		this.playersToAdd 				= [];
-		this.temp 								= [];
+		this.botAdded 						=	false;
+		this.playerSets 					= [];
 		this.quarterFinal 				= [];
 		this.semiFinal 						= [ [], [] ];
 		this.finalGame 						= [];
@@ -36,14 +39,13 @@ Board.prototype = {
 	},
 
 
+	//Handle addPlayer requests from poolRemote for OneToTOne and Tournament
 	addPlayer: function(playerId, isDummy) {
 		var that = this;
 		var player = new Player(playerId, isDummy, that.redis, function(data) {
-				console.log('Player details added !');
 				var opponentFound = false;
 	    	if (that.clubType == "OneToOne") {
 			    that.playersToAdd.push(player);
-
 			  //   that.redis.hgetall("club:"+that.clubId, function(err, findClub) {
 					// 	that.redis.zincrby("club_config_occupancy:"+findClub.club_config_id, 1, "club:"+that.clubId, function(err, newData) {
 					// 		console.log(newData);
@@ -55,31 +57,34 @@ Board.prototype = {
 			  	if(that.quarterFinal.length <= 3 || (!!that.quarterFinal[3] && that.quarterFinal[3].length <= 2)) {
 			  		that.redis.hgetall("club:"+that.clubId, function(err, findClub) {
 							that.redis.zincrby("club_config_occupancy:"+findClub.club_config_id, 1, "club:"+that.clubId, function(err, newData) {
-								console.log('new data is ' + that.clubId + ' - ' + newData);
 							});
 						});
 						that.players.push(player);
-				    that.temp.push(player);
+				    that.playerSets.push(player);
 				    if (player.isDummy == true) {
 				    	player.playerIp = null;
 				    }
-				    if (that.temp.length == 2) {
-			        that.temp[0].isServer = true;
-			        that.temp[1].isServer = false;
-		            if ((that.temp[0].isDummy == true) && (that.temp[1].isDummy == true)) {
-		            	var winnerId = that.temp[0].playerId;
-		            	console.log('Winner id - ' + winnerId);
-		            	setTimeout(function(){
-		            		that.gameOver(winnerId, "quarterFinal", function(){});
-		            	},3000);
-		            }
 
-				        if (that.quarterFinal.length > 4) {
-				            that.quarterFinal = [];
-				        }
-				        that.quarterFinal.push(that.temp);
-				        that.temp = [];
+				    //Add these two temp players in Quarterfinal
+				    if(that.playerSets.length == 2) {
+			        that.playerSets[0].isServer = true;
+			        that.playerSets[1].isServer = false;
 
+			        //If both these players are bot then call Game Over for these players
+	            if ((that.playerSets[0].isDummy == true) && (that.playerSets[1].isDummy == true)) {
+	            	// console.log(that.playerSets);
+	            	var winnerId = that.playerSets[0].playerId;
+	            	console.log('Winner id - ' + winnerId);
+	            	setTimeout(function(){
+	            		that.gameOver(winnerId, "quarterFinal", function(){});
+	            	},3000);
+	            }
+
+			        if (that.quarterFinal.length > 4) {
+			            that.quarterFinal = [];
+			        }
+			        that.quarterFinal.push(that.playerSets);
+			        that.playerSets = [];
 				    }
 				    that.eventEmitter.emit("addPlayer");
 			  	} 
@@ -88,8 +93,9 @@ Board.prototype = {
 	},
 
 
+	//Handle game over request from handler
+	//Update fixture by sendting players from Quarter to Semi and Semi to Final
 	gameOver: function(winnerId, stage, cb){
-		console.log('Call back needs to be sent ! - ' + stage);
 		var that 							= this,
 				quarterCount 			= 0,
 				semiCount 				= 0,
@@ -103,47 +109,35 @@ Board.prototype = {
 					quarterCount++;
 				
 				//If winner found at 0, 2, 4 or 6 index of Quarter final
-				// console.log("1. Quarterfinal - player - " + player[0].playerId + ' winner - ' + winnerId);
 				if(player[0].playerId == winnerId) {
-					// console.log('1 Winner found at - ' + (quarterCount) +' !')
 					if((quarterCount == 1 && !that.firstQuarterOver) || (quarterCount == 2 && !that.secondQuarterOver)) {
 						if(_.where(that.semiFinal[0], {playerId: winnerId}).length < 1) {
-							// console.log('1  Push in semi final list - ' + that.semiFinal[0].length);
 							that.semiFinal[0].push(player[0]);
 							QFWinnerFound = true;
 						}
 					} else if((quarterCount == 3 && !that.thirdQuarterOver) || (quarterCount == 4 && !that.fourthQuarterOver)) {
 						if(_.where(that.semiFinal[1], {playerId: winnerId}).length < 1) {
-							// console.log('2 Push in semi final list - ' + that.semiFinal[1].length);
 							that.semiFinal[1].push(player[0]);
 							QFWinnerFound = true;
 						}
 					}
 				} else if(player[1].playerId == winnerId) {
-					// console.log('2 Winner found at - ' + (quarterCount) +' !')
 					console.log(!that.firstQuarterOver);
 					if((quarterCount == 1 && !that.firstQuarterOver) || (quarterCount == 2 && !that.secondQuarterOver)) {
 						if(_.where(that.semiFinal[0], {playerId: winnerId}).length < 1) {
-							// console.log('3 Push in semi final list - ' + that.semiFinal[0].length);
 							that.semiFinal[0].push(player[1]);
 							QFWinnerFound = true;
 						}
 					} else if((quarterCount == 3 && !that.thirdQuarterOver) || (quarterCount == 4 && !that.fourthQuarterOver)) {
 						if(_.where(that.semiFinal[1], {playerId: winnerId}).length < 1) {
-							// console.log('4 Push in semi final list - ' + that.semiFinal[1].length);
 							that.semiFinal[1].push(player[1]);
 							QFWinnerFound = true;
 						}
 					} 
 				}
 
+				//Maintain the status of Qurterfinal game over
 				if(QFWinnerFound) {
-					// console.log(that.quarterFinal[1]);
-					// console.log(winnerId);
-					// console.log(_.where(that.quarterFinal[0], {playerId: winnerId}));
-					// console.log(_.where(that.quarterFinal[1], {playerId: winnerId}));
-					// console.log(_.where(that.quarterFinal[2], {playerId: winnerId}));
-					// console.log(_.where(that.quarterFinal[3], {playerId: winnerId}));
 					if(!!that.semiFinal[0][0] && that.semiFinal[0].length > 0 && !that.firstQuarterOver && _.where(that.quarterFinal[0], {playerId: winnerId}).length > 0) {
 						console.log('1 Quarter final over !');
 						that.firstQuarterOver = true;
@@ -194,6 +188,8 @@ Board.prototype = {
 				    }
 					}
 			  }
+
+			  //Callback for this function
 			  if (QFWinnerFound && !callbackSent) {
 			  	console.log('Sending game over for Quarterfinal!');
 			  	that.eventEmitter.emit("gameOver");
@@ -207,23 +203,18 @@ Board.prototype = {
 				_.each(that.semiFinal, function(playerSet) {
 					_.each(playerSet, function(player) {
 						semiCount++;
-						// console.log((semiCount) + '. Player - ' + player.playerId + ' and winner - ' + winnerId);
 						if(player.playerId == winnerId) {
-								// console.log('Push in winners list!');
 							if(_.where(that.finalGame, {playerId: winnerId}).length < 1) {
-								// console.log('Winner not exists - Push in winners list!');
 								that.finalGame.push(player);
-
 								SFWinnerFound = true;
 
+								//If both the semifinal players are bot then call Game Over
 								if (that.finalGame.length > 0) {
-									// console.log(that.finalGame[0]);
 									if (that.finalGame[0].isDummy) {
 										if (that.finalGame.length > 1) {
 											if (that.finalGame[1].isDummy) {
 												var finalWinner = that.finalGame[0].playerId;
 												that.finalGameWinner = that.finalGame[0];
-												// console.log("It should be started after 7 seconds");
 												setTimeout(function(){
 													console.log("Send final game over!");
 													that.gameOver(finalWinner, "final", function(){});
@@ -234,6 +225,8 @@ Board.prototype = {
 								}
 							}
 						}
+
+						//Callback for this function
 						if (SFWinnerFound && !callbackSent) {
 							console.log('Sending game over for semiFinal!');
 							that.eventEmitter.emit("gameOver");
@@ -245,12 +238,15 @@ Board.prototype = {
 				});
 			}
 		} else if (stage == "final") {
+
+			//Take out the tournament winner players profile
 			if(that.finalGame[0].playerId == winnerId ) {
 				that.finalGameWinner = that.finalGame[0];
 			} else if(that.finalGame[1].playerId == winnerId ) {
 				that.finalGameWinner = that.finalGame[1];
 			}
-			// console.log(that.finalGameWinner);
+
+
 			if (that.finalGame[0].playerId == winnerId || that.finalGame[1].playerId == winnerId) {
 				that.eventEmitter.emit("tournamentWinner");
 			}
@@ -262,15 +258,8 @@ Board.prototype = {
 			cb();
 		}
 		if(!callbackSent) {
-			// console.error('Callback not sent from Game Over, Stage - ' + stage);
 			cb();
 		}
-
-		// setInterval(function(){
-		// 	console.log('THIS IS TIMER BROADCAST')
-		// 	that.eventEmitter.emit("gameOver");
-		// }, 2000)
-
 	},
 
 
@@ -282,6 +271,7 @@ Board.prototype = {
 		game.status = "PROGRESS";
 	},
 
+	//Reset tournament fixture
 	resetTournament: function(){
 		if(this.players.length <= 0) {
 	  	this.quarterFinal = [];
@@ -290,6 +280,7 @@ Board.prototype = {
 	  }
 	},
 
+	//Restart game if required
 	restartGame: function() {
 		var that = this;
 		var game = that.game;
@@ -299,6 +290,7 @@ Board.prototype = {
 		}
 	},
 
+	//Handle tournament in game messages request from handler
 	getMessage: function(messageId, cb) {
 		var success = true,
 				message = "";
@@ -342,6 +334,7 @@ Board.prototype = {
 		});
 	},
 
+	//Get a bot player name when creating a bot
 	getBotPlayerName: function(type, cb) {
 		var  firstNames	= ["Alina", "Braden", "Britney", "Brock", "Charles", 
 											"Charlie", "Darren", "Edward", "Elisa", "Anne", 
@@ -368,11 +361,14 @@ var Game = function(board) {
 };
 
 
+//Create a player object and also 
+//Update player in game object from redis
 var Player = function(playerId, isDummy, redis, cb) {
 	var that = this;
 	that.playerId = playerId;
 	that.isDummy = isDummy;
 	redis.hgetall("game_player:"+playerId, function(err, data){
+		console.log(data);
 		if(!!data) {
 		  that.playerLevel = parseInt(data.player_level);
 		  that.playerName = data.player_name;
