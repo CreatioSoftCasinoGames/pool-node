@@ -120,20 +120,42 @@ if(app.get('serverId') == "connector-server-1") {
 }
 
 // app configuration
+
 app.configure('production|development', 'connector', function(){
-  app.set('connectorConfig',
-    {
-      connector : pomelo.connectors.sioconnector,
-      transports : ['websocket'],
-      heartbeats : true,
-      closeTimeout : 60,
-      heartbeatTimeout : 60,
-      heartbeatInterval : 25,
-      type : 'wss',
-      key: fs.readFileSync ('./shared/server.key'),
-      cert: fs.readFileSync ('./shared/server.crt')
+   app.set('connectorConfig',
+     {
+     connector: pomelo.connectors.sioconnector,
+      key: fs.readFileSync('../shared/server.key'),
+      cert: fs.readFileSync('../shared/server.crt')
     });
 });
+
+
+
+//gate server configuration for wss support
+app.configure('production|development', 'gate', function(){
+  app.set('connectorConfig',
+    {
+      connector: pomelo.connectors.sioconnector,
+      key: fs.readFileSync('../shared/server.key'),
+      cert: fs.readFileSync('../shared/server.crt')
+    });
+});
+
+//master server configuration for wss support
+app.configure('production|development', 'master', function(){
+  app.set('connectorConfig',
+    {
+      connector: pomelo.connectors.sioconnector,
+      key: fs.readFileSync('../shared/server.key'),
+      cert: fs.readFileSync('../shared/server.crt')
+
+  });
+ });
+
+
+
+
 
 // var poolRoute = function (session, msg, app, cb) {
 //   var poolServers = app.getServersByType('pool');
