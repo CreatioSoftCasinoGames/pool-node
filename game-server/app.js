@@ -128,7 +128,9 @@ app.configure('production|development', 'connector', function(){
       heartbeats : true,
       closeTimeout : 60,
       heartbeatTimeout : 60,
-      heartbeatInterval : 25
+      heartbeatInterval : 25,
+      key: fs.readFileSync ('../shared/server.key'),
+      cert: fs.readFileSync ('../shared/server.crt')
     });
 });
 
