@@ -130,8 +130,8 @@ app.configure('production|development', 'connector', function(){
       heartbeatTimeout : 60,
       heartbeatInterval : 25,
       type : 'wss',
-      key: fs.readFileSync ('../shared/server.key'),
-      cert: fs.readFileSync ('../shared/server.crt')
+      key: fs.readFileSync ('./shared/server.key'),
+      cert: fs.readFileSync ('./shared/server.crt')
     });
 });
 
