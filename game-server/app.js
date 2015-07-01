@@ -3,7 +3,7 @@ var dispatcher = require('./app/util/dispatcher');
 var backendFetcher = require('./app/util/backendFetcher');
 var redisUtil = require('./app/util/redisUtil');
 var _ = require('underscore');
-
+var fs = require('fs');
 /**
  * Init app for client.
  */
