@@ -1,9 +1,5 @@
-
-
-
-#!/usr/bin/env node
- var debug = require('debug')('myapp');
- var app = require('../app');
+var debug = require('debug')('myapp');
+var app = require('../app');
 var fs = require('fs');
 var https = require('https');
 var fs = require('fs');
@@ -11,12 +7,15 @@ var options = {
   key: fs.readFileSync('../shared/server.key'),
   cert: fs.readFileSync('../shared/server.crt')
 };
- 
- app.set('port', process.env.PORT || 3001);
- 
 
-var httpsServer = https.createServer(options, app);
+app.set('port', process.env.PORT || 3001);
 
-var server = httpsServer.listen(app.get('port'), function() {
+var server = app.listen(app.get('port'), function() {
    debug('Express server listening on port ' + server.address().port);
  });
+
+// var httpsServer = https.createServer(options, app);
+
+// var server = httpsServer.listen(app.get('port'), function() {
+//   debug('Express server listening on port ' + server.address().port);
+// });

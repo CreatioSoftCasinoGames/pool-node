@@ -44,6 +44,7 @@ Board.prototype = {
 		var that = this;
 		var player = new Player(playerId, isDummy, that.redis, function(data) {
 				var opponentFound = false;
+				console.log(that.clubType);
 	    	if (that.clubType == "OneToOne") {
 			    that.playersToAdd.push(player);
 			  //   that.redis.hgetall("club:"+that.clubId, function(err, findClub) {

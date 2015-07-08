@@ -292,20 +292,37 @@ Handler.prototype = {
 
   //Get online players form every instances of all room configs
   getPlayerOnline: function(msg, next) {
-    var totalData = 0;
-    var onlinePlayer = [];
-    _.each(msg.data, function(clubId) {
-      msg.redis.get(clubId, function(err, playerCount) {
+    var totalData 		= 0,
+    		onlinePlayer 	= [],
+    		redis 				=	!!msg.redis ? msg.redis : null,
+    		roomConfigs 	=	!!msg.data ? msg.data : null,
+    		callbackSent 	=	false;
+
+    if(!redis  || !roomConfigs) {
+    	callbackSent = true;
+    	cb(onlinePlayer);
+    }
+
+    _.each(roomConfigs, function(clubId) {
+      redis.get(clubId, function(err, playerCount) {
         totalData++;
         onlinePlayer.push({
           clubId: clubId.split(":")[1],
           player: !!playerCount ? parseInt(playerCount) : 0
         });
-        if (totalData == msg.data.length) {
+        if (totalData >= msg.data.length) {
+        	callbackSent = true;
           next(onlinePlayer);
         }
       })
     });
+
+    //Extra check if callback not sent in any case
+    setTimeout(function(){
+    	if(!callbackSent) {
+    		cb(onlinePlayer);
+    	}
+    }, 1000)
   },
 
 

@@ -119,59 +119,22 @@ if(app.get('serverId') == "connector-server-1") {
   });
 }
 
-// app configuration
-
+// app configuration (Configuration is for WS connection) 
 app.configure('production|development', 'connector', function(){
-   app.set('connectorConfig',
-     {
-     connector: pomelo.connectors.sioconnector,
-      key: fs.readFileSync('../shared/server.key'),
-      cert: fs.readFileSync('../shared/server.crt')
+  app.set('connectorConfig',
+    {
+      connector : pomelo.connectors.sioconnector,
+      //websocket, htmlfile, xhr-polling, jsonp-polling, flashsocket
+      transports : ['websocket'],
+      heartbeats : true,
+      closeTimeout : 60,
+      heartbeatTimeout : 60,
+      heartbeatInterval : 25
     });
 });
 
 
 
-//gate server configuration for wss support
-app.configure('production|development', 'gate', function(){
-  app.set('connectorConfig',
-    {
-      connector: pomelo.connectors.sioconnector,
-      key: fs.readFileSync('../shared/server.key'),
-      cert: fs.readFileSync('../shared/server.crt')
-    });
-});
-
-//master server configuration for wss support
-app.configure('production|development', 'master', function(){
-  app.set('connectorConfig',
-    {
-      connector: pomelo.connectors.sioconnector,
-      key: fs.readFileSync('../shared/server.key'),
-      cert: fs.readFileSync('../shared/server.crt')
-
-  });
- });
-
-
-
-
-
-// var poolRoute = function (session, msg, app, cb) {
-//   var poolServers = app.getServersByType('pool');
-
-//   if (!poolServers || poolServers.length === 0) {
-//     cb (new Error ('can not find pool servers.'));
-//     return;
-//   }
-//   var index = parseInt(session.get("tableConfigId")) % poolServers.length;
-//   var res = poolServers[index];
-//   cb(null, res.id);
-// };
-
-// app.configure('production|development', function() {
-//   app.route('pool', poolRoute);
-// });
 
 // start app
 app.start();
