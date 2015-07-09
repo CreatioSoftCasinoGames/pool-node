@@ -167,10 +167,7 @@ PoolRemote.prototype = {
 								//Remove these players from room_config_players array
 								redis.srem("club_config_players:"+clubConfigId, responseData.playerId);
 								redis.srem("club_config_players:"+clubConfigId, responseData.opponentId);
-								redis.smembers("club_config_players:"+clubConfigId, function(err, test){
-									console.log("====== UPDATED LIST =====");
-									console.log(test)
-								})
+								
 								//If the game type is tournament then ready to add more bot players
 								if (channel.board.clubType == "Tournament") {
 									if(!channel.board.botAdded) {

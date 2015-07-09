@@ -328,8 +328,9 @@ Handler.prototype = {
 
 	//Handle request to update profile (from this file)
 	updatePlayer: function(msg, next) {
-		var details = {};
-		layerId = msg.playerId;
+		var details = {},
+				playerId = msg.playerId;
+				
 		details.xp 						= !!msg.xp ? msg.xp : 0;
 		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
 		details.award 				= !!msg.award ? msg.award : 0;
@@ -340,8 +341,8 @@ Handler.prototype = {
 
 	//This worker is used to update user's profile through Rails (sidekiq)
 	updateProfile: function(msg, session, next){
-		var that = this,
-		details	=	{};
+		var that 		= this,
+				details	=	{};
 
 		details.ball_potted 	= !!msg.ball_potted ? msg.ball_potted : 0;
 		details.strike_count 	= !!msg.strike_count ? msg.strike_count : 0;
