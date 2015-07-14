@@ -17,8 +17,6 @@ DBLogger.prototype = {
 
 	//This worker is used to update user's profile through Rails (sidekiq)
 	updateGame: function(data) {
-		console.log("===== DBLOGGER ==========");
-		console.log(data);
 	  var that = this;
 	  that.sidekiq.enqueue("UpdateWorker", JSON.stringify({
 	  	id: data.playerId,
