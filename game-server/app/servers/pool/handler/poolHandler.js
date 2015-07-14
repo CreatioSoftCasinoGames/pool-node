@@ -25,9 +25,8 @@ Handler.prototype = {
 	//Handle get club config details from client (Data will be fetched form Rails)
 	getClubConfigs: function(msg, session, next) {
 		var that = this;
-		backendFetcher.get("/api/v1/club_configs.json", {club_type: msg.club_type}, that.app, function(data) {
+		backendFetcher.get("/api/v1/club_configs.json", {}, that.app, function(data) {
 			if(!!data) {
-				console.log(data)
 				next(null, {
 					club_configs: data
 				})

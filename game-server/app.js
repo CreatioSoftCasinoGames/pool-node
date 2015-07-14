@@ -83,7 +83,7 @@ if(app.get('serverId') == "connector-server-1") {
             var connector = app.components.__connector__;
             console.log('Send friendAdded broadcast to  - '+message.login_token+'!');
             if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
-              connector.send(null, "friendAdded", {friendId: message.friend_token}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
+              connector.send(null, "friendAdded", {friendId: message.friend_token, fullName: message.full_name, imageUrl: message.image_url, online: message.online, deviceAvatarId: message.device_avtar_id}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
                 console.log('Braodcast friendAdded to  - '+message.login_token+' has been successfully sent !');
                 // cb(null)
               });
@@ -95,20 +95,20 @@ if(app.get('serverId') == "connector-server-1") {
             console.log(message);
           }
 
-          if(!!message.friend_token) {
-            console.log('Send friendAdded broadcast to  - '+message.friend_token+'!');
-            if(!!app.get('sessionService').getByUid(message.friend_token) && app.get('sessionService').getByUid(message.friend_token).length > 0) {
-              connector.send(null, "friendAdded", {friendId: message.login_token, fullName: message.full_name, imageUrl: message.image_url, online: message.online, deviceAvatarId: message.device_avtar_id}, [app.get('sessionService').getByUid(message.friend_token)[0].id], {}, function(err) {
-                console.log('Braodcast friendAdded to  - '+message.friend_token+' has been successfully sent !');
-                // cb(null)
-              });
-            } else {
-              console.error('Player session not found on server !');
-            }
-          } else {
-            console.log('Friend token not found while frind added!');
-            console.log(message); 
-          }
+          // if(!!message.friend_token) {
+          //   console.log('Send friendAdded broadcast to  - '+message.friend_token+'!');
+          //   if(!!app.get('sessionService').getByUid(message.friend_token) && app.get('sessionService').getByUid(message.friend_token).length > 0) {
+          //     connector.send(null, "friendAdded", {friendId: message.login_token, fullName: message.full_name, imageUrl: message.image_url, online: message.online, deviceAvatarId: message.device_avtar_id}, [app.get('sessionService').getByUid(message.friend_token)[0].id], {}, function(err) {
+          //       console.log('Braodcast friendAdded to  - '+message.friend_token+' has been successfully sent !');
+          //       // cb(null)
+          //     });
+          //   } else {
+          //     console.error('Player session not found on server !');
+          //   }
+          // } else {
+          //   console.log('Friend token not found while frind added!');
+          //   console.log(message); 
+          // }
         } else {
           console.error('Session services not found in app!');
         }
