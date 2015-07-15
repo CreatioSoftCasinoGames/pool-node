@@ -198,7 +198,8 @@ var onUserLeave = function(app, session) {
 		backendFetcher.delete("/api/v1/sessions/"+session.uid+".json", {}, app, function(data) {
 			console.log(data.message);
 		});
-	})
+	});
+	
 	//Remove from channel also
 	app.rpc.pool.poolRemote.kick(session, session.uid, app.get('serverId'), session.get('clubId'), null);
 };

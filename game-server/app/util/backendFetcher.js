@@ -22,7 +22,15 @@ module.exports = {
 		    data += chunk;
 		  });
 		  response.on('end', function () {
-		  	cb(JSON.parse(data));
+		  	if(!!data && data[0] != "<") {
+		  		cb(JSON.parse(data));
+		  	} else {
+		  		console.error('Error in parsing data from Rails!');
+		  		cb({
+		  			success: false,
+		  			err: 'Data not found or format mismatch!'
+		  		});
+		  	}
 		  })
 		});
 		req.write(queryString);
