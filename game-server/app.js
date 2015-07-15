@@ -82,7 +82,7 @@ if(app.get('serverId') == "connector-server-1") {
             var connector = app.components.__connector__;
             console.log('Send friendAdded broadcast to  - '+message.login_token+'!');
             if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
-              connector.send(null, "friendAdded", {login_token: message.friend_token, full_name: message.full_name, image_url: message.image_url, online: message.is_online, device_avatar_id: message.device_avatar_id}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
+              connector.send(null, "friendAdded", {login_token: message.friend_token, full_name: message.full_name, image_url: message.image_url, online: message.is_online, device_avatar_id: message.device_avatar_id, unique_id: message.unique_id}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
                 console.log('Braodcast friendAdded to  - '+message.login_token+' has been successfully sent !');
                 // cb(null)
               });
