@@ -93,23 +93,33 @@ if(app.get('serverId') == "connector-server-1") {
             console.log('Login token not found while frind added!');
             console.log(message);
           }
-
-          // if(!!message.friend_token) {
-          //   console.log('Send friendAdded broadcast to  - '+message.friend_token+'!');
-          //   if(!!app.get('sessionService').getByUid(message.friend_token) && app.get('sessionService').getByUid(message.friend_token).length > 0) {
-          //     connector.send(null, "friendAdded", {friendId: message.login_token, fullName: message.full_name, imageUrl: message.image_url, online: message.online, deviceAvatarId: message.device_avtar_id}, [app.get('sessionService').getByUid(message.friend_token)[0].id], {}, function(err) {
-          //       console.log('Braodcast friendAdded to  - '+message.friend_token+' has been successfully sent !');
-          //       // cb(null)
-          //     });
-          //   } else {
-          //     console.error('Player session not found on server !');
-          //   }
-          // } else {
-          //   console.log('Friend token not found while frind added!');
-          //   console.log(message); 
-          // }
         } else {
           console.error('Session services not found in app!');
+        }
+      } else if(message.publish_type = "challenge") {
+        if(!!message.requested_token) {
+          var connector = app.components.__connector__;
+          console.log('Send saveChallenge broadcast to  - '+message.requested_token+'!');
+          if(!!app.get('sessionService').getByUid(message.requested_token) && app.get('sessionService').getByUid(message.requested_token).length > 0) {
+            connector.send(null, "saveChallenge", 
+              { 
+                id: message.id,
+                invitation_type: message.invitation_type,
+                club_config_id: message.club_config_id, 
+                user_login_token: message.user_login_token,
+                requested_token: message.requested_token,
+                full_name: message.full_name,
+                image_url: message.image_url,
+                online: message.online,
+                device_avatar_id: message.device_avatar_id,
+                unique_id: message.unique_id
+              }, [app.get('sessionService').getByUid(message.requested_token)[0].id], {}, function(err) {
+              console.log('Braodcast saveChallenge to  - '+message.requested_token+' has been successfully sent !');
+              // cb(null)
+            });
+          } else {
+            console.error('Player session not found on server !');
+          }
         }
       }
     } else {
