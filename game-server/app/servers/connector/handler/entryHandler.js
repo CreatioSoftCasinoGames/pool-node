@@ -128,8 +128,8 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 			broadcast 		=	null,
 			clubConfigId 	= !!msg.clubConfigId ? msg.clubConfigId : null;
 			accepted 			= !!msg.accepted ? msg.accepted : false;
-			uniqueId			= !!msg.uniqueId ? msg.uniqueId : null;
-
+			uniqueId			= !!msg.unique_id ? msg.unique_id : null;
+             id        =   msg.id;
 	if(!!gameType && !!opponentId && !!clubConfigId) {
 
 		//Handle different cases for revenge and challenge
@@ -152,21 +152,28 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 				message.image_url = playerDetails.player_image;
 				message.device_avatar_id = parseInt(playerDetails.device_avatar_id);
 				message.unique_id = uniqueId;
-
+               
 				if(!!playerDetails.player_server_id) {
 					//If player is online
 					if(!!playerDetails.online && playerDetails.online == "true") {
-						that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
+						backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
+							message.id = data.id;
+							console.log("test broadcast data");
+							console.log(message);
+							that.sendMessageToUser(opponentId,  playerDetails.player_server_id, broadcast, message);
+							console.log('Game request detail saved in database!');
+						});
+						//that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
 						next(null, {
 							success: true
 						})
 					} else {
-						console.log("=======================Revenge Chalange===================================")
-						console.log(message)
-						console.error('Player '+opponentId+' is offline while '+gameType+' !')
-						backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
+						console.log("=======================Revenge Challange===================================")
+						console.log(message);
+						console.error('Player '+opponentId+' is offline while '+gameType+' !');
+						//backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
 							console.log('Game request detail saved in database!');
-						});
+						//});
 						next(null, {
 							success: false,
 							message: 'Player is offline!'
@@ -183,7 +190,7 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 				console.log("=======================Revenge Chalange===================================")
 				console.log(message)
 				console.error('Player '+opponentId+' details not found in redis / or offline!');
-				backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
+				backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId, id : id}, that.app, function(data) {
 					console.log('Game request detail saved in database!');
 				});
 				next(null, {
