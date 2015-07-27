@@ -17,6 +17,9 @@ var Handler = function(app) {
  * @param  {Function} next    next step callback
  * @return {Void}
  */
+
+
+ /*   */
 Handler.prototype.entry = function(msg, session, next) {
   next(null, {code: 200, msg: 'game server is ok.'});
 };
@@ -86,6 +89,7 @@ Handler.prototype.enter= function(msg, session, next) {
 //Handle join club request from client
 Handler.prototype.joinClub=function(msg, session, next) {
 	console.error(msg);
+	console.log("This is join club request");
   var that = this;
   var board = null;
   that.app.rpc.pool.poolRemote.add(session, session.uid, that.app.get('serverId'), msg.clubConfigId, msg.playerIp, true, function(data) {
@@ -118,51 +122,73 @@ Handler.prototype.standUp= function(msg, session, next) {
 
 //Handle challenge/revenge request from Client
 Handler.prototype.revengeChallenge= function(msg, session, next) {
-	console.log("*********************************************************");
+	console.log("************************this is challenge request*********************************");
 	console.log(msg);
 
 	var that 					= this,
 			gameType 			= !!msg.gameType ? msg.gameType : null,
-			opponentId 		= !!msg.opponentId ? msg.opponentId : null,
+			oppId 			= !!msg.opponentId ? msg.opponentId : null,
 			redis 				= that.app.get("redis"),
-			broadcast 		=	null,
-			clubConfigId 	= !!msg.clubConfigId ? msg.clubConfigId : null;
+			broadcast 			=	null,
+			clubConfigId 		= !!msg.clubConfigId ? msg.clubConfigId : null;
 			accepted 			= !!msg.accepted ? msg.accepted : false;
 			uniqueId			= !!msg.unique_id ? msg.unique_id : null;
-             id        =   msg.id;
-	if(!!gameType && !!opponentId && !!clubConfigId) {
+			challengerId		= !!msg.challengerId ? msg.challengerId : null;
+           
 
+
+
+
+
+	if(!!gameType && !!oppId && !!clubConfigId) {
+          
+
+           //get login token corresponding to unique id
+            redis.hgetall("unique_id:"+oppId, function(err, player) {
+                console.log("this is login token from redis");
+            	console.log(player);
+            	if(!!player)  {
+                 opponentId = player.login_token;
+                 console.log("login_token from redis fetch is ",+opponentId);
 		//Handle different cases for revenge and challenge
 		redis.hgetall("game_player:"+opponentId, function(err, playerDetails){
 			if(!!playerDetails) {
-				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				console.log("++++++++++++++++Player details of opponent in challenge+++++++++++++++++++++++++++++++++++++++++++++++")
 				console.log(playerDetails);
 				console.log(accepted);
-				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				console.log("+++++++++++++++++++++end of details++++++++++++++++++++++++++++++++++++++++++")
 				console.log(!!playerDetails.online)
 				broadcast = gameType == "revenge" ? "revenge" : "challenge";
-				message = {};
-				message.user_login_token = session.uid;
-				message.requested_token = opponentId;
-				message.club_config_id = clubConfigId;
-				message.full_name = playerDetails.player_name;
-				message.invitation_type = gameType;
-				message.accepted = accepted;
-				message.online = !!playerDetails.online;
-				message.image_url = playerDetails.player_image;
-				message.device_avatar_id = parseInt(playerDetails.device_avatar_id);
-				message.unique_id = uniqueId;
+				
                
 				if(!!playerDetails.player_server_id) {
 					//If player is online
 					if(!!playerDetails.online && playerDetails.online == "true") {
+						redis.hgetall("game_player:"+challengerId, function(err, challengerDetails){
+							message = {};
+							message.user_login_token = session.uid;
+							message.requested_token = opponentId;
+							message.club_config_id = clubConfigId;
+							message.full_name = challengerDetails.player_name;
+							message.invitation_type = gameType;
+							message.accepted = accepted;
+							message.online = !!challengerDetails.online;
+							message.image_url = challengerDetails.player_image;
+							message.device_avatar_id = parseInt(challengerDetails.device_avatar_id);
+							message.unique_id = uniqueId;
+						})
 						backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
 							message.id = data.id;
 							console.log("test broadcast data");
 							console.log(message);
+
+							//broadcast to opponent regarding challenger's challenge
+							console.log("broadcast being sent to opponent reg challenge");
 							that.sendMessageToUser(opponentId,  playerDetails.player_server_id, broadcast, message);
 							console.log('Game request detail saved in database!');
 						});
+
+						
 						//that.sendMessageToUser(opponentId, playerDetails.player_server_id, broadcast, message);
 						next(null, {
 							success: true
@@ -190,17 +216,23 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 				console.log("=======================Revenge Chalange===================================")
 				console.log(message)
 				console.error('Player '+opponentId+' details not found in redis / or offline!');
-				backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId, id : id}, that.app, function(data) {
+				backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
 					console.log('Game request detail saved in database!');
 				});
 				next(null, {
 					success: false,
 					message: 'Player '+opponentId+' details not found in redis / or offline!'
 				})
-			}
-		});
+	}
+                       });	
+    
+    }
+});
 
-	} else {
+	} 
+
+
+	else {
 		console.error('Parameter missing while revenge or challenge!')
 		console.log(msg);
 		next({

@@ -39,6 +39,28 @@ Handler.prototype = {
 		})
 	},
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	//Get a player's channel using clubId 
 	getPlayerAndChannel: function(session, cb) {
 		var that = this;
@@ -170,39 +192,238 @@ Handler.prototype = {
 		}
 	},
 
-	//Handle Revenge / Challeneg request acceptance (start the game)
+
+//Handle Revenge Challenge request acceptance (start the game)
 	requestAccepted: function(msg, session, next) {
+		console.log(msg)
 		var that = this,
 		requestId = !!msg.requestId ? msg.requestId : null;
+		opponentId = !!msg.opponentId ? msg.opponentId : null;
+		challengerId = !!msg.challengerId ? msg.challengerId : null;
+		challengertoken = !!msg.opponentoken  ? msg.opponentoken  : null;
+        redis 		= that.app.get("redis");
+        clubConfigId =  !!msg.clubConfigId ? msg.clubConfigId : null;
+        broadcast = "friend_challenge_acceptance";
 
-		if(!!requestId) {
-			backendFetcher.put("/api/v1/game_requests/"+requestId, {accepted: true}, that.app, function(data){
-				console.log('Challenge has been accepted !')
-			})
-			next(null, {
+            
+      redis.hgetall("unique_id:"+challengerId, function(err, player) {
+           if(!!player)  {
+                      chtoken = player.login_token;
+                      redis.hgetall("game_player:"+chtoken, function(err, oppelayer) {
+                      console.log("this is challenger detail");
+                      console.log(oppelayer);
+                      console.log(" This is clubconfigid for finding clubid", +clubConfigId);
+      redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
+                    console.log("This is data for club_config from redis to extract clubid");
+                   if(!!typeData) {
+                         
+      redis.zrevrangebyscore("club_config_occupancy:"+clubConfigId, 2, -1, "limit", 0, 1, function(err, data) {
+                           console.log(data);
+							if(data.length>0) {
+								freeClubs = true;
+								
+									
+							var sendclubId = parseInt(data[0].split(":")[1])
+							console.log("The value for final clubid from redis before sending is: ", +sendclubId);
+								
+							} else if(data.length == 0 || !freeClubs) {
+								backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
+									if(data.valid) {
+										redisUtil.createClub(data.club, redis);
+										
+											
+											var sendclubId = parseInt(data.club.id)
+										console.log("The value for final clubid from database before sending is: ", +sendclubId);
+									}
+								})
+						  }
+
+
+                if(!!oppelayer) {
+               
+
+      redis.hgetall("game_player:"+challengertoken, function(err, opplayer) {
+
+ 	               console.log("this is opponent detail");
+                   console.log(opplayer);
+             backendFetcher.get("/api/v1/users/"+ chtoken +".json", {}, that.app, function(newoPlayer) {
+                
+                   finalmsg = {};
+                   finalmsg.full_name = newoPlayer.full_name, 
+                   finalmsg.xp = newoPlayer.xp,
+                   finalmsg.current_level = newoPlayer.current_level, 
+                   finalmsg.image_url = newoPlayer.image_url, 
+                   finalmsg.player_ip = oppelayer.player_ip, 
+                   finalmsg.opplogintoken = chtoken,
+                   finalmsg.isServer = false, 
+                   finalmsg.isDummy = false, 
+                   finalmsg.clubConfigId = clubConfigId,
+                   finalmsg.FriendClubId = sendclubId,
+                   finalmsg.device_avatar_id = parseInt(oppelayer.device_avatar_id)
+
+                   that.sendMessageToUser(challengertoken, opplayer.player_server_id, broadcast, finalmsg);
+
+                  });
+
+
+                if(!!opplayer) {
+					backendFetcher.get("/api/v1/users/"+ challengertoken +".json", {}, that.app, function(newPlayer) {
+                
+            mesg = {};					                    
+            mesg.full_name = newPlayer.full_name, 
+            mesg.xp = newPlayer.xp,
+            mesg.current_level = newPlayer.current_level, 
+            mesg.image_url = newPlayer.image_url, 
+            mesg.player_ip = opplayer.player_ip, 
+            mesg.opplogintoken = challengertoken,
+            mesg.isServer = true, 
+            mesg.isDummy = false,
+            mesg.clubConfigId = clubConfigId,
+            mesg.FriendClubId = sendclubId,
+            mesg.device_avatar_id = parseInt(newPlayer.device_avatar_id)
+
+            //send confirmation to challenger
+			that.sendMessageToUser(chtoken, oppelayer.player_server_id, broadcast, mesg);
+
+                next(null, {
 				success: true
 			});
-		} else {
-			console.error('Request id not found while accepting invitation!')
+            
+
+
+					                  });
+                              }
+                               });
+                       } 
+                       }); 
+                        } else {
+			console.error('No clubs found, Please sync the database!');
 			next(null, {
 				success: false,
-				message: 'Request id not found while accepting invitation!'
+				message: "No clubs found, Please sync the database!"
 			});
 		}
-	},
+                           });
+
+                     });
+
+                       } 
+                   });
+
+  //that.sendMessageToUser(challengertoken, newPlayer.player_server_id, broadcast, mesg);
+
+
+       },
+
+
+
+
+
+
+/*
+//Handle Revenge Challenge request acceptance (start the game)
+	requestAccepted: function(msg, session, next) {
+		console.log(msg)
+		var that = this,
+		requestId = !!msg.requestId ? msg.requestId : null;
+		opponentId = !!msg.opponentId ? msg.opponentId : null;
+		challengerId = !!msg.challengerId ? msg.challengerId : null;
+		challengertoken = !!msg.opponentoken  ? msg.opponentoken  : null;
+        redis 		= that.app.get("redis");
+        broadcast = "friend_challenge_acceptance";
+         
+        //get status of challenger  --- whether online or not whether playing game or not
+
+//redis.hgetall("game_player:"+challengertoken, function(err, redisplayer) {
+	     console.log("this is the broadcast response sent for challenger");
+        console.log(redisplayer);
+       //send opponent profile to challenger       
+       // if(!!redisplayer) {
+            //    if (!!redisplayer.online && redisplayer.online = "true")   {
+
+                // if (redisplayer.playing == "false") {
+
+                 //fetch opponent profile from redis
+                 redis.hgetall("game_player:"+challengertoken, function(err, opplayer) {
+
+                if(!!opplayer) {
+					backendFetcher.get("/api/v1/users/"+ challengertoken +".json", {}, that.app, function(newPlayer) {
+                
+            mesg = {};					                    
+            mesg.full_name = newPlayer.full_name, 
+            mesg.xp = newPlayer.xp,
+            mesg.current_level = newPlayer.current_level, 
+            mesg.image_url = newPlayer.image_url, 
+            mesg.player_ip = oppplayer.player_ip, 
+            mesg.isServer = false, 
+            mesg.isDummy = true, 
+            mesg.device_avatar_id = parseInt(newPlayer.device_avatar_id)
+
+            //send confirmation to challenger
+
+              redis.hgetall("unique_id:"+challengerId, function(err, player) {
+            	if(!!player)  {
+                 chtoken = player.login_token;
+			that.sendMessageToUser(chtoken, newPlayer.player_server_id, broadcast, mesg);	
+                               }
+                           });
+
+
+					                  });
+                              }
+                               });
+            next(null, {
+				success: true,
+				message: 'Player is available for gameplay!'
+			});
+
+
+
+                 //}
+            //    else {
+
+
+              // next(null, {
+			//	success: false,
+			//	message: 'Player is busy in gameplay!'
+			//});
+              
+
+         //       }
+
+
+
+              //  }
+
+       // }
+       
+             //  });
+
+
+
+       },
+/*
+
+
 
 	//Handle Revenge / Challenge for requested user (offline players)
 	acceptGameInvitation: function(msg, session, next) {
 
 		var that			 	= this,
-				opponentId 	= !!msg.opponentId ? msg.opponentId : null,
+				oppId 	= !!msg.opponentId ? msg.opponentId : null,
 				requestId 	= !!msg.requestId ? msg.requestId : null,
 				invitationType = !!msg.invitationType ? msg.invitationType : null,
 				redis 			= that.app.get("redis"),
 				broadcast 	= "gameInvitation",
 				message 		= {};
 
-		if(!!opponentId && !!requestId) {
+
+		if(!!oppId && !!requestId) {
+
+                redis.hgetall("unique_id:"+oppId, function(err, player) {
+            	if(!!player)  {
+                 opponentId = player.login_token;
+
 			redis.hgetall("game_player:"+opponentId, function(err, playerDetails){
 				if(!!playerDetails) {
 					if(!!playerDetails.player_server_id) {
@@ -243,6 +464,9 @@ Handler.prototype = {
 					});
 				}
 			});
+                }
+          }); 
+
 		} else {
 			console.error('opponentId or requestId not found while accepting game invitation!')
 			console.log(msg)
@@ -252,11 +476,39 @@ Handler.prototype = {
 			})
 		}
 	},
-
+*/
 	//Send a broadcast to player from rpcInvoke
 	sendMessageToUser: function(uid, serverId, route, msg) {
    this.app.rpcInvoke(serverId, {namespace: "user", service: "entryRemote", method: "sendMessageToUser", args: [uid, msg, route]}, function(data) {});
   },
+
+//saket -- this is message from server opponent stating broadcast be sent to client opponent to
+//connect for rpc calls
+clientconnectmaster:  function(msg, session, next) {
+        console.log("*********************ClientConnect to master*********************************");
+	    console.log(msg);
+        var that 					= this,
+        redis = that.app.get("redis");
+        message = {};
+        broadcast         =    "mastertoclient",
+        message.info = "Connect to Master Now";
+        redis.hmget("game_player:"+msg.opponentId, "player_server_id", function(err, serverID){
+        that.sendMessageToUser(msg.opponentId,  serverID, broadcast, message);
+       
+       });
+
+next(null, {
+				success: true
+				//message: 'opponentId or requestId not found while accepting game invitation!'
+			})
+
+   },//that is the message sent
+
+
+
+
+
+  
 
 	//Handle online player count request from client
 	//Online players stored in redis

@@ -104,7 +104,8 @@ handler.getConnector = function(msg, session, next) {
 				if(user != null){
 					var res = dispatcher.dispatch(user.id, connectors);
 					redis.sadd("game_players", "game_player:"+user.login_token);
-			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_ip", msg.ip, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, "device_avatar_id", parseInt(user.device_avatar_id))
+					//redis.hmset("unique_id"+user.unique_id, "game_player:"+user.login_token);
+			  	redis.hmset("game_player:"+user.login_token, "player_id", user.login_token, "player_ip", msg.ip, "player_level", user.current_level, "player_name", user.full_name, "player_xp", user.xp, "player_image", user.image_url, "playing", false, "device_avatar_id", parseInt(user.device_avatar_id));
 					next(null, {
 						code: 200,
 						host: res.host,
@@ -132,8 +133,17 @@ handler.getHostAndPort = function(msg, next) {
   if (msg.user != null) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
 
+    //--saket login_token corresponding to given unique_id
+    msg.redis.sadd("unique_ids", "unique_id:" + msg.user.unique_id);
+    
+    msg.redis.hmset("unique_id:"+msg.user.unique_id, "login_token", msg.user.login_token);
+     //end
+
     //Save this player data in redis as well
     msg.redis.sadd("game_players", "game_player:" + msg.user.login_token);
+    
+     
+
     msg.redis.hmset("game_player:"+msg.user.login_token, "player_id", msg.user.login_token, "player_level", msg.user.current_level, "player_name", msg.user.full_name, "player_xp", msg.user.xp, "player_image", msg.user.image_url, "playing", false, "player_ip", msg.ip, "device_avatar_id", parseInt(msg.user.device_avatar_id), "online", true);
     next({
       code: 200,
