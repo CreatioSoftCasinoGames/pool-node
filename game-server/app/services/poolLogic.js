@@ -8,7 +8,7 @@ var Board = function(clubId, redis, app, clubType) {
 	this.app 						=	app;
 	this.clubType    		= clubType;
 	this.waitingTime 		=	5000;
-	this.addbotInterval	=	2000;
+	this.addbotInterval	=	1000;
 	this.gamePlayers 		=	[];
 	this.leavePlayers		=	[];
 	this.gameRunning 		= false;
@@ -60,10 +60,12 @@ Board.prototype = {
 							that.redis.zincrby("club_config_occupancy:"+findClub.club_config_id, 1, "club:"+that.clubId, function(err, newData) {
 							});
 						});
+			  		console.log("The name of player is * before push" + player.playerId);
 						that.players.push(player);
+			  		console.log("The name of player is ** after push" + player.playerId);
 				    that.playerSets.push(player);
 				    if (player.isDummy == true) {
-				    	player.playerIp = null;
+				    	player.playerIp = String(null);
 				    }
 
 				    //Add these two temp players in Quarterfinal
@@ -84,7 +86,10 @@ Board.prototype = {
 			        if (that.quarterFinal.length > 4) {
 			            that.quarterFinal = [];
 			        }
+			        console.log("The name of player is * Player Set 0 " + that.playerSets[0].playerId);
+			        console.log("The name of player is * Player Set 1 " + that.playerSets[1].playerId);
 			        that.quarterFinal.push(that.playerSets);
+
 			        that.playerSets = [];
 				    }
 				    that.eventEmitter.emit("addPlayer");
@@ -371,15 +376,15 @@ var Player = function(playerId, isDummy, redis, cb) {
 	redis.hgetall("game_player:"+playerId, function(err, data){
 		console.log(data);
 		if(!!data) {
-		  that.playerLevel = parseInt(data.player_level);
-		  that.playerName = data.player_name;
-		  that.playerXp = parseInt(data.player_xp);
-		  that.playerImage = data.player_image;
-		  that.playerIp = data.yoursIp;
+		  that.playerLevel 		= parseInt(data.player_level);
+		  that.playerName 		= data.player_name;
+		  that.playerXp 			= parseInt(data.player_xp);
+		  that.playerImage 		= data.player_image;
+		  that.playerIp 			= String(data.player_ip);
 		  that.deviceAvatarId = parseInt(data.device_avatar_id);
-		  cb()
+		  cb();
 		} else {
-			cb()
+			cb();
 		}
 	});
 };

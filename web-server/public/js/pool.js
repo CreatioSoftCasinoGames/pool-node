@@ -19,7 +19,7 @@ angular.module('pool', []).controller('PoolController', ['$scope', '$http', '$wi
   };
 
   $scope.getClubConfigs = function() {
-    window.pomelo.request("pool.poolHandler.getClubConfigs", {club_type: "OneToOne"}, function(data) {
+    window.pomelo.request("pool.poolHandler.getClubConfigs", {club_type: "Tournament"}, function(data) {
       myPool.showPartial(".club_configs");
       $scope.$apply(function () {
         $scope.club_configs = data.club_configs;

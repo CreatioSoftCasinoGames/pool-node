@@ -39,28 +39,6 @@ Handler.prototype = {
 		})
 	},
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	//Get a player's channel using clubId 
 	getPlayerAndChannel: function(session, cb) {
 		var that = this;
@@ -160,24 +138,27 @@ Handler.prototype = {
 	//Send broadcast to opponent player
 	powerupUsed: function(msg, session, next) {
 
-		var that 				= this,
+		var     that 				= this,
 				opponentId 	= !!msg.opponentId ? msg.opponentId : null;
 				redis 			=	that.app.get("redis");
 
+        console.log("This is req message before  opoonent idcheck", +opponentId);
 		if(!!opponentId) {
+			console.log("This is req message for power up", +msg);
 			msg = _.omit(msg, 'opponentId');
+			console.log("This is message after omit", +msg);
 			console.log(session.uid);
-			redis.hmget("game_player:"+opponentId, "player_server_id", function(err, serverId) {
-				console.log(serverId);
+			redis.hgetall("game_player:"+opponentId, function(err, serverId) {
+				console.log("The player details for Powerup is", +serverId);
 				if(!!serverId && serverId.length > 0) {
 					console.log(msg)
-					that.sendMessageToUser(opponentId, serverId[0], "powerupUsed", msg);
-					next({
+					that.sendMessageToUser(opponentId, serverId.player_server_id, "powerupUsed", msg);
+					next(null, {
 						success: true
 					});
 				} else {
 					console.error('No server found for player - '+session.uid+' while powerup used!');
-					next({
+					next(null, {
 						success: false,
 						message: 'No server found for player - '+session.uid+' while powerup used!'
 					});
@@ -185,7 +166,7 @@ Handler.prototype = {
 			});
 		} else {
 			console.error('Opponent Id not found while powerup used!')
-			next({
+			next(null, {
 				success: false,
 				message: 'Opponent Id not found while powerup used!'
 			});

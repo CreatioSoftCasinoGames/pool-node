@@ -195,11 +195,11 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 						})
 					} else {
 						console.log("=======================Revenge Challange===================================")
-						console.log(message);
+						//console.log(message);
 						console.error('Player '+opponentId+' is offline while '+gameType+' !');
-						//backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
+						backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
 							console.log('Game request detail saved in database!');
-						//});
+						});
 						next(null, {
 							success: false,
 							message: 'Player is offline!'
@@ -214,7 +214,7 @@ Handler.prototype.revengeChallenge= function(msg, session, next) {
 				}
 			} else {
 				console.log("=======================Revenge Chalange===================================")
-				console.log(message)
+				//console.log(message)
 				console.error('Player '+opponentId+' details not found in redis / or offline!');
 				backendFetcher.post("/api/v1/game_requests", {login_token: session.uid, requested_token: opponentId, invitation_type: gameType, club_config_id: clubConfigId}, that.app, function(data) {
 					console.log('Game request detail saved in database!');

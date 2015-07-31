@@ -16,8 +16,9 @@ var redisPubSubClient   = require('redis').createClient(poolConstants.redisPort,
 //Register pub/sub events with redis
 redisPubSubClient.subscribe("online");
 redisPubSubClient.subscribe("friend_added");
+redisPubSubClient.subscribe("gift_received");
 
-app.set('redis', redis)
+app.set('redis', redis);
 app.set('name', 'pool');
 app.set('poolConstants', poolConstants);
 app.set('redisPubSubClient', redisPubSubClient);
@@ -32,33 +33,56 @@ if(app.get('serverId') == "connector-server-1") {
     if(!!message) {
       console.log(message);
       message = JSON.parse(message);
-      console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$        Braodcast    $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+      console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$        Broadcast    $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
       console.log(message);
-      console.log("$$$$$$$$$$$$$$")
+      console.log("$$$$$$$$$$$$$$");
 
-      if(message.publish_type == "gift_received") {
-        console.log('========= New friend online ==========');
+
+  //for gift sent and received
+
+
+      if(message.request_type == "gift_received") {
+        console.log('========= Gift Received Broadcast ==========');
+
+        //console.log(app.get('sessionService'));
+
         if(!!app.get('sessionService')) {
-          if(!!message.send_to_token) {
+          //this is gift received to send_to_token
+          if(!message.confirmed) {
+            console.log("===========Broadcast to Sender==============");
+            if(!!message.send_to_token) {
+              var connector = app.components.__connector__;
+              console.log('Send giftReceived broadcast to  - '+message.send_to_token+'!');
+              if(!!app.get('sessionService').getByUid(message.send_to_token) && app.get('sessionService').getByUid(message.send_to_token).length > 0) {
+                connector.send(null, "giftSent", {message: message}, [app.get('sessionService').getByUid(message.send_to_token)[0].id], {}, function(err) {
+                  console.log('Braodcast giftReceived to  - '+message.send_to_token+' has been successfully sent !');
+                  // cb(null)
+                });
+              } else {
+                console.error('Player session not found on server !');
+              }
+            } else {
+              console.error('Send token not found!');
+              console.log(message);
+            }
+          } else {
+            console.log("===========Broadcast to Receiver==============");
             var connector = app.components.__connector__;
-            console.log('Send giftReceived broadcast to  - '+message.send_to_token+'!');
-            if(!!app.get('sessionService').getByUid(message.send_to_token) && app.get('sessionService').getByUid(message.send_to_token).length > 0) {
-              connector.send(null, "giftReceived", {message: message}, [app.get('sessionService').getByUid(message.send_to_token)[0].id], {}, function(err) {
-                console.log('Braodcast giftReceived to  - '+uid+' has been successfully sent !');
+            console.log('Send giftSent broadcast to  - '+message.login_token+'!');
+            if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
+              connector.send(null, "giftReceived", {message: message}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
+                console.log('Braodcast giftReceived to  - '+message.login_token+' has been successfully sent !');
                 // cb(null)
               });
             } else {
               console.error('Player session not found on server !');
             }
-          } else {
-            console.error('Send token not found!');
-            console.log(message);
           }
         } else {
           console.error('Session services not found in app!');
         }
-      } 
-
+      }
+ //online-offline
 
 
       else if(message.publish_type == "online") {
