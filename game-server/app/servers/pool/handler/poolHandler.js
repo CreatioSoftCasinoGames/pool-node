@@ -138,19 +138,24 @@ Handler.prototype = {
 	//Send broadcast to opponent player
 	powerupUsed: function(msg, session, next) {
 
-		var     that 				= this,
-				opponentId 	= !!msg.opponentId ? msg.opponentId : null;
-				redis 			=	that.app.get("redis");
+		var    that 				= this,
+		      redis 			=	that.app.get("redis"),
+				  opponentId 	= !!msg.opponentId ? msg.opponentId : null;
+				powertype = !!msg.power_type ? msg.power_type : null;
+				
 
-        console.log("This is req message before  opoonent idcheck", +opponentId);
+        console.log("This is req message before  opoonent idcheck:");
+        console.log(opponentId);
 		if(!!opponentId) {
 			console.log("This is req message for power up", +msg);
 			msg = _.omit(msg, 'opponentId');
 			console.log("This is message after omit", +msg);
 			console.log(session.uid);
 			redis.hgetall("game_player:"+opponentId, function(err, serverId) {
-				console.log("The player details for Powerup is", +serverId);
-				if(!!serverId && serverId.length > 0) {
+				console.log("The opponent player details for Powerup is");
+        console.log(serverId);
+
+				if(!!serverId) {
 					console.log(msg)
 					that.sendMessageToUser(opponentId, serverId.player_server_id, "powerupUsed", msg);
 					next(null, {

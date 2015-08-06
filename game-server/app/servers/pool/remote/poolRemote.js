@@ -23,7 +23,8 @@ PoolRemote.prototype = {
 		var that 			= this;
 		freeClubs = false,
 				redis 		= that.app.get("redis"),
-				playerId 	= uid;
+				playerId 	= uid,
+				clubDetails = {};
 
 	  redis.hgetall("club_config:"+clubConfigId, function(err, typeData){
 		if(!!typeData) {
@@ -41,7 +42,9 @@ PoolRemote.prototype = {
 							} else if(data.length == 0 || !freeClubs) {
 								backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
 									if(data.valid) {
-										redisUtil.createClub(data.club, redis);
+										clubDetails.club = data.club;
+										clubDetails.clubType = data.club_type;
+										redisUtil.createClub(clubDetails, redis);
 										cb({
 											success: true,
 											clubId: parseInt(data.club.id)
@@ -126,7 +129,8 @@ PoolRemote.prototype = {
 
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
-			
+			console.log("<<<<<<<<<<<<This is poolRemote clubdata from redis>>>>>>>>>>>>>>");
+			console.log(clubData);
 			//Update number of online players in this club
 			if(!!clubData) {
 				redis.get("onlinePlayer:"+clubData.club_config_id, function(err, data1){
@@ -149,6 +153,11 @@ PoolRemote.prototype = {
 				if(!channel.board){
 					console.log("New channel created !");
 					channel.board = new poolLogic.Board(clubId, redis, that.app, clubData.club_type);
+           
+
+
+
+
 				  redis.sadd("club_config_players:"+clubConfigId, uid, function(err, data){});
 				that.addEventListers(channel);
 				channel.board.addPlayer(uid, false);
@@ -169,9 +178,14 @@ PoolRemote.prototype = {
 								redis.srem("club_config_players:"+clubConfigId, responseData.playerId);
 								redis.srem("club_config_players:"+clubConfigId, responseData.opponentId);
 								
+								console.log("<<<<<<<<<<The Tournament is starting:>>>>>>>>>>>");
+								console.log(channel.board.clubType);
 								//If the game type is tournament then ready to add more bot players
 								if (channel.board.clubType == "Tournament") {
+
+
 									if(!channel.board.botAdded) {
+										console.log("<<<<<<<<The bot is added to board botadded : true>>>>>>>>");
 										channel.board.botAdded = true;
 										setTimeout(function(){
 											console.log('Enough of waiting player, bring bots!')
@@ -490,7 +504,7 @@ PoolRemote.prototype = {
 
 		if(!!channel) {
 			channel.leave(uid, sid);
-			console.log('Player has been removed from channel!')
+			console.log('Kick has been called, Player has been removed from channel!')
 		} else {
 			console.error("No channel for this player, Not playing game!");
 		}	

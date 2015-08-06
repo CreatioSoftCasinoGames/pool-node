@@ -39,50 +39,83 @@ if(app.get('serverId') == "connector-server-1") {
 
 
   //for gift sent and received
+if(message.request_type == "gift_received") {
+console.log('========= Gift Received Broadcast ==========');
+
+    //console.log(app.get('sessionService'));
+    if(!!app.get('sessionService')) {
+        //this is gift received to send_to_token        
+        if(!message.confirmed) {
+           console.log("===========Broadcast to Sender==============");
+            redis.hgetall("unique_id:"+message.receiver_unique_id, function(err, player) {
+                console.log("extracting login token from unique id ");
+                message.send_to_token = player.login_token;
+                if (!!message.send_to_token) {
+                    var connector = app.components.__connector__;
+                    console.log('Send giftReceived broadcast to  - ' + message.send_to_token + '!');
+                    if (!!app.get('sessionService').getByUid(message.send_to_token) && app.get('sessionService').getByUid(message.send_to_token).length > 0) {
+                        connector.send(null, "giftSent", {
+                                id: message.id,
+                                request_type: message.request_type,
+                                user_login_token: message.login_token,
+                                send_to_token: message.send_to_token,
+                                sender_name: message.sender_name,
+                                receiver_name: message.receiver_name,
+                                full_name: message.full_name,
+                                gift_type: message.gift_type,
+                                gift_value: message.gift_value,
+                                confirmed: message.confirmed,
+                                image_url: message.image_url,
+                                device_avatar_id: message.device_avatar_id,
+                                sender_unique_id: message.sender_unique_id,
+                                receiver_unique_id: message.receiver_unique_id
+                            },
+                            [app.get('sessionService').getByUid(message.send_to_token)[0].id], {}, function (err) {
+                                console.log('Braodcast giftReceived to  - ' + message.send_to_token + ' has been successfully sent !');
+                                // cb(null)                           
+                                 });
+                    } else {
+                        console.error('Player session not found on server !');
+                    }
+
+                } else {
+                    console.error('Send token not found!');
+                    console.log(message);
+                }
+            
+               
+        });
+         } else {
+                console.log("===========Broadcast to Receiver==============");
+                var connector = app.components.__connector__;
+                redis.hgetall("unique_id:"+message.sender_unique_id, function(err, player) {
+                    message.login_token = player.login_token;
+                    console.log('Send giftSent broadcast to  - '+message.login_token+'!');
+                    if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
+                        connector.send(null, "giftReceived", {id:message.id, request_type: message.request_type, user_login_token: message.login_token,
+                            send_to_token: message.send_to_token, sender_name: message.sender_name, receiver_name: message.receiver_name, full_name: message.full_name, gift_type: message.gift_type,
+                            gift_value: message.gift_value, confirmed: message.confirmed, image_url: message.image_url, device_avatar_id: message.device_avatar_id, sender_unique_id: message.sender_unique_id, receiver_unique_id: message.receiver_unique_id}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
+                            console.log('Braodcast giftReceived to  - '+message.login_token+' has been successfully sent !');
+                            // cb(null)                     
+                               });
+                    }
+                else {
+                    console.error('Player session not found on server !');
+                }
 
 
-      if(message.request_type == "gift_received") {
-        console.log('========= Gift Received Broadcast ==========');
-
-        //console.log(app.get('sessionService'));
-
-        if(!!app.get('sessionService')) {
-          //this is gift received to send_to_token
-          if(!message.confirmed) {
-            console.log("===========Broadcast to Sender==============");
-            if(!!message.send_to_token) {
-              var connector = app.components.__connector__;
-              console.log('Send giftReceived broadcast to  - '+message.send_to_token+'!');
-              if(!!app.get('sessionService').getByUid(message.send_to_token) && app.get('sessionService').getByUid(message.send_to_token).length > 0) {
-                connector.send(null, "giftSent", {message: message}, [app.get('sessionService').getByUid(message.send_to_token)[0].id], {}, function(err) {
-                  console.log('Braodcast giftReceived to  - '+message.send_to_token+' has been successfully sent !');
-                  // cb(null)
-                });
-              } else {
-                console.error('Player session not found on server !');
-              }
-            } else {
-              console.error('Send token not found!');
-              console.log(message);
-            }
-          } else {
-            console.log("===========Broadcast to Receiver==============");
-            var connector = app.components.__connector__;
-            console.log('Send giftSent broadcast to  - '+message.login_token+'!');
-            if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
-              connector.send(null, "giftReceived", {message: message}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
-                console.log('Braodcast giftReceived to  - '+message.login_token+' has been successfully sent !');
-                // cb(null)
-              });
-            } else {
-              console.error('Player session not found on server !');
-            }
-          }
-        } else {
-          console.error('Session services not found in app!');
+            });
         }
-      }
- //online-offline
+     } else {
+        console.error('Session services not found in app!');
+    }
+}
+
+
+
+
+
+//online-offline
 
 
       else if(message.publish_type == "online") {
@@ -132,13 +165,12 @@ if(app.get('serverId') == "connector-server-1") {
 
        else if(message.publish_type == "friend_added") {
         console.log('========= A new friend added ==========');
-        if(!!app.get('sessionService')) {
           console.log(message);
           if(!!message.login_token){
             var connector = app.components.__connector__;
             console.log('Send friendAdded broadcast to  - '+message.login_token+'!');
             if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
-              connector.send(null, "friendAdded", {login_token: message.friend_token, full_name: message.full_name, image_url: message.image_url, online: message.is_online, device_avatar_id: message.device_avatar_id, unique_id: message.unique_id}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
+              connector.send(null, "friendAdded", {login_token: message.friend_token, full_name: message.full_name, image_url: message.image_url, online: message.is_online, device_avatar_id: message.device_avatar_id, unique_id: message.unique_id, can_send_gift: message.can_send_gift, can_challenge: message.can_challenge}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
                 console.log('Braodcast friendAdded to  - '+message.login_token+' has been successfully sent !');
                 // cb(null)
               });
@@ -254,7 +286,7 @@ if(app.get('serverId') == "connector-server-1") {
     }
 
 
-}
+
 
   });
 }

@@ -3,6 +3,8 @@ var events = require('events');
 var dbLogger = require('./dbLogger.js');
 
 var Board = function(clubId, redis, app, clubType) {
+	console.log("<<<<<<<<This is pool logic ClubType for board>>>>>>>>>>>>>>>");
+	console.log(clubType);
 	this.clubId 		 		= clubId;
 	this.redis 					= redis;
 	this.app 						=	app;
@@ -70,8 +72,23 @@ Board.prototype = {
 
 				    //Add these two temp players in Quarterfinal
 				    if(that.playerSets.length == 2) {
+				    	if((that.playerSets[0].isDummy == true) && (that.playerSets[1].isDummy == true)){
+				    		console.log("Both player are bot in quarters match");
+              that.playerSets[0].isServer = false;
+			        that.playerSets[1].isServer = false;
+				    	} else if((that.playerSets[0].isDummy == false) && (that.playerSets[1].isDummy == true)) {
 			        that.playerSets[0].isServer = true;
 			        that.playerSets[1].isServer = false;
+               } else if((that.playerSets[0].isDummy == true) && (that.playerSets[1].isDummy == false)) {
+			        that.playerSets[0].isServer = false;
+			        that.playerSets[1].isServer = true;
+               } else if((that.playerSets[0].isDummy == false) && (that.playerSets[1].isDummy == false)) {
+			        console.log("Both players are real in quarters match");
+			        that.playerSets[0].isServer = false;
+			        that.playerSets[1].isServer = true;
+               }
+
+
 
 			        //If both these players are bot then call Game Over for these players
 	            if ((that.playerSets[0].isDummy == true) && (that.playerSets[1].isDummy == true)) {
@@ -161,9 +178,12 @@ Board.prototype = {
 
 			  //If first semi final index has both bots then Game over
 			  if(!that.firstSemiOver) {
+			  	//first player comes in 
 			  	if (that.semiFinal[0].length > 0) {
+			  		//if first player is bot
 						if (that.semiFinal[0][0].isDummy ) {
 							if (that.semiFinal[0].length > 1) {
+								//if both players are bot
 								if (that.semiFinal[0][1].isDummy) {
 									var firstSemiWinner = that.semiFinal[0][0].playerId;
 											that.firstSemiOver = true;
@@ -173,13 +193,26 @@ Board.prototype = {
 					      	},5000);
 								}
 							}
+				    }  // 1st player is a  real player
+				     else {
+               	if (that.semiFinal[0].length > 1) {
+               		//2nd player is real player
+								if (!that.semiFinal[0][1].isDummy) {
+                   console.log("This is 2nd real player in 1st semifinal");
+									that.semiFinal[0][1].isServer = false;
+                 
+								}
+							}
+
 				    }
 					}
 			  }
 
 			  //If second semi final index has both bots then Game over
 			  if(!that.secondSemiOver) {
+			  	//first player comes in
 			  	if (that.semiFinal[1].length > 0) {
+			  		//first player is bot
 						if (that.semiFinal[1][0].isDummy ) {
 							if (that.semiFinal[1].length > 1) {
 								if (that.semiFinal[1][1].isDummy) {
@@ -187,12 +220,28 @@ Board.prototype = {
 									that.secondSemiOver = true;
 									setTimeout(function(){
 										that.gameOver(secondSemiWinner, "semiFinal", function(){});
-										console.log("Second semi final game over!");
+										console.log("Second semi final game over with both bots!");
 					      	},5000);
 								}
 							}
 				    }
+					}  else {
+
+            	if (that.semiFinal[1].length > 1) {
+               		//2nd player is real player
+								if (!that.semiFinal[1][1].isDummy) {
+                  
+                  console.log("This is second real player in 2nd semifinal");
+									that.semiFinal[1][1].isServer = false;
+                 
+								}
+							} 
+           
+
+
+
 					}
+
 			  }
 
 			  //Callback for this function
@@ -214,10 +263,12 @@ Board.prototype = {
 								that.finalGame.push(player);
 								SFWinnerFound = true;
 
-								//If both the semifinal players are bot then call Game Over
+								//first finalist comes in
 								if (that.finalGame.length > 0) {
+									//first finalist is bot
 									if (that.finalGame[0].isDummy) {
 										if (that.finalGame.length > 1) {
+											//If both the semifinal players are bot then call Game Over
 											if (that.finalGame[1].isDummy) {
 												var finalWinner = that.finalGame[0].playerId;
 												that.finalGameWinner = that.finalGame[0];
@@ -225,8 +276,19 @@ Board.prototype = {
 													console.log("Send final game over!");
 													that.gameOver(finalWinner, "final", function(){});
 							      	  },5000);
+											} //2nd player is real player
+											else {    
+												//make is server true
+                     that.finalGame[1].isServer = true;
+
+
 											}
 										}
+									} //2nd finalist is real player
+									else{
+
+										that.finalGame[0].isServer = true;
+										that.finalGame[1].isServer = false;
 									}
 								}
 							}
