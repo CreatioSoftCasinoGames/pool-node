@@ -268,6 +268,8 @@ PoolRemote.prototype = {
 				console.log('========= FINAL PLAYERS =========');
 				console.log(playerList)
 				playerList = _.without(playerList, msg.playerId); //Remove the current player from list
+				console.log('========= FINAL OPPONENETS PLAYERS =========');
+				console.log(playerList);
 				if(playerList.length > 0 && !opponentFound) {
 					opponentFound = true;
 
@@ -295,7 +297,7 @@ PoolRemote.prototype = {
 					setTimeout(function(){
 						redis.zrangebyscore("club_id:"+msg.clubId, msg.playerLevel-3, msg.playerLevel+3, function(err, newPlayerList){
 							newPlayerList = _.without(newPlayerList, msg.playerId); //Remove the current player from list
-							if(playerList.length > 0 && !opponentFound) {
+							if(newPlayerList.length > 0 && !opponentFound) {
 								opponentFound = true;
 			
 								//Remove players from redis data, Set status playing, send response
@@ -306,11 +308,11 @@ PoolRemote.prototype = {
 												redis.hmset("game_player:"+playerList[0], "playing", true, "opponentId", msg.playerId, function(err, playerLevel) {
 													redis.hgetall("game_player:"+playerList[0], function(err, player) {
 														backendFetcher.get("/api/v1/users/"+ playerList[0] +".json", {}, that.app, function(newPlayer) {
-										that.returnData(msg.playerId, playerList[0], newPlayer.full_name, newPlayer.xp, newPlayer.current_level, newPlayer.image_url, String(player.player_ip), false, true, parseInt(newPlayer.device_avatar_id), function(data){
-											console.log("The real player data is:", +data);
-										  next(data)
-										})
-									  });
+															that.returnData(msg.playerId, playerList[0], newPlayer.full_name, newPlayer.xp, newPlayer.current_level, newPlayer.image_url, String(player.player_ip), false, true, parseInt(newPlayer.device_avatar_id), function(data){
+																console.log("The real player data is:", +data);
+															  next(data)
+															});
+													  });
 													});
 												});
 											});
@@ -332,10 +334,10 @@ PoolRemote.prototype = {
 															  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
 															  		console.log("The bot details are:");
 																		console.log("bot_player");
-									channel.board.addPlayer(bot_player.login_token, true);
-																that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){
-												  next(data)
-												})
+																		channel.board.addPlayer(bot_player.login_token, true);
+																	that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){
+																	  next(data)
+																	});
 															  });
 															});
 													  });												  
@@ -346,20 +348,19 @@ PoolRemote.prototype = {
 															backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: firstName, last_name: lastName}, that.app, function(bot_player) {
 																redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
 																	  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
-																		channel.board.addPlayer(bot_player.login_token, true);
-																		redis.sadd("busy_bots", bot_player.login_token)
-																		redis.sadd("game_players", "game_player:"+bot_player.login_token);
-																		redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
-																		console.log("The bot details are:" +bot_player[0]);
-																		console.log(bot_player);
-																		that.returnData(msg.playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){
-														  next(data)
-														})
+																			channel.board.addPlayer(bot_player.login_token, true);
+																			redis.sadd("busy_bots", bot_player.login_token)
+																			redis.sadd("game_players", "game_player:"+bot_player.login_token);
+																			redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
+																			console.log("The bot details are:" +bot_player[0]);
+																			console.log(bot_player);
+																			that.returnData(msg.playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){
+																			  next(data)
+																			});
+																		});
 																	});
-										});
-																	
 																});
-														});
+															});
 														});
 												  }	
 												});
@@ -369,16 +370,22 @@ PoolRemote.prototype = {
 														redis.hgetall("game_player:"+playerDetails.opponentId, function(err, opponentDetails) {
 															if(!!opponentDetails) {
 																that.returnData(playerDetails.player_id, opponentDetails.player_id,  opponentDetails.player_name, opponentDetails.player_xp,  opponentDetails.player_level, opponentDetails.player_image,  String(opponentDetails.player_ip), false, false, parseInt(opponentDetails.device_avatar_id), function(data){
-											  next(data);
-												});
+																  next(data);
+																	});
 															} else {
 																console.error('Opponent '+playerDetails.opponentId+' details not found !');
-																next();
+																that.addBotasOpponent(msg.playerId, function(data){
+																	console.log("Bot added as Opponent");
+																	next(data);
+																});
 															}												
 														})
 													} else {
 														console.error('Player '+msg.playerId+' details not found !');
-														next();
+														that.addBotasOpponent(msg.playerId, function(data){
+																console.log("Bot added as Opponent");
+															next(data);
+														});
 													}	
 												});
 											}
@@ -392,6 +399,31 @@ PoolRemote.prototype = {
 				}
 			});
 		});
+  },
+
+  addBotasOpponent: function(playerId, cb){
+  	var that 	= this,
+  			redis = that.app.get("redis");
+
+  	channel.board.getBotPlayerName("first_name", function(firstName){
+			channel.board.getBotPlayerName("last_name", function(lastName){
+				backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: firstName, last_name: lastName}, that.app, function(bot_player) {
+					redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
+						  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
+								channel.board.addPlayer(bot_player.login_token, true);
+								redis.sadd("busy_bots", bot_player.login_token)
+								redis.sadd("game_players", "game_player:"+bot_player.login_token);
+								redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
+								console.log("The bot details are:" +bot_player[0]);
+								console.log(bot_player);
+								that.returnData(playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){			  
+  								cb(data);
+								});
+							});
+						});
+					});
+				});
+			});
   },
 
   filterOpponent: function(clubConfigId, allPlayers, cb) {

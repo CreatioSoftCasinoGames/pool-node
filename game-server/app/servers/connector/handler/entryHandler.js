@@ -253,8 +253,9 @@ var onUserLeave = function(app, session) {
 	if(!session || !session.uid) {
 		return;
 	}
+	
 	//Log out this user from Rails 
-	app.get('redis').del("game_players" , "game_player:"+session.uid, function(err, data) {
+	app.get('redis').del("game_players", "game_player:"+session.uid, function(err, data) {
 		backendFetcher.delete("/api/v1/sessions/"+session.uid+".json", {}, app, function(data) {
 			console.log(data.message);
 		});

@@ -93,7 +93,7 @@ console.log('========= Gift Received Broadcast ==========');
                     console.log('Send giftSent broadcast to  - '+message.login_token+'!');
                     if(!!app.get('sessionService').getByUid(message.login_token) && app.get('sessionService').getByUid(message.login_token).length > 0) {
                         connector.send(null, "giftReceived", {id:message.id, request_type: message.request_type, user_login_token: message.login_token,
-                            send_to_token: message.send_to_token, sender_name: message.sender_name, receiver_name: message.receiver_name, full_name: message.full_name, gift_type: message.gift_type,
+                            send_to_token: message.send_to_token, sender_name: player.sender_name, receiver_name: message.receiver_name, full_name: message.full_name, gift_type: message.gift_type,
                             gift_value: message.gift_value, confirmed: message.confirmed, image_url: message.image_url, device_avatar_id: message.device_avatar_id, sender_unique_id: message.sender_unique_id, receiver_unique_id: message.receiver_unique_id}, [app.get('sessionService').getByUid(message.login_token)[0].id], {}, function(err) {
                             console.log('Braodcast giftReceived to  - '+message.login_token+' has been successfully sent !');
                             // cb(null)                     
