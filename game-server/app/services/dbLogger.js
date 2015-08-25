@@ -26,6 +26,16 @@ DBLogger.prototype = {
 	  });
   },
 
+  updatePlayerData: function(data) {
+	  var that = this;
+	  that.sidekiq.enqueue("UpdateWorker", JSON.stringify({
+	  	id: data.playerId,
+	    data: data
+	  }), {
+	    retry: false
+	  });
+  },
+
   //Handle profile update requests from different servers
   updatePlayer: function(msg, next) {
   	var details = {};
@@ -36,6 +46,7 @@ DBLogger.prototype = {
 		details.win 					= !!msg.win ? parseInt(msg.win) : 0;
 		details.game_played 	= !!msg.gamePlayed ? parseInt(msg.gamePlayed) : 0;
 		details.deduce_amount = !!msg.deduce_amount ? parseInt(msg.deduce_amount) : 0;
+		console.log(details);
 		this.updateGame({playerId: playerId, details: details})
 	},
 

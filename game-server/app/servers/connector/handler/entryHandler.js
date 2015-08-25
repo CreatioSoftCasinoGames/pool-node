@@ -120,6 +120,47 @@ Handler.prototype.standUp= function(msg, session, next) {
 	});
 };
 
+Handler.prototype.dummyDriverlocation = function(msg, session, next) {
+
+
+var that 			= this,	
+redis 				= that.app.get("redis"),
+ latitude =    !!msg.latitude ? msg.latitude : null;
+ longitude =    !!msg.longitude ? msg.longitude : null;
+  poppId   =    !!msg.driIdentity  ? msg.driIdentity : null;
+   broadcast = "driverlocation";
+
+   var message = {};
+   message.latitude = latitude; 
+   message.logitude = longitude;
+redis.hgetall("unique_id:"+poppId, function(err, driver) {
+	opponentId = driver.login_token;
+ if(!!opponentId) {
+ that.sendMessageToUser(opponentId,  driver.player_server_id, broadcast, message);
+	
+	next(null, {
+            success: true
+            
+        })				
+    } else {
+
+    	next(null, {
+            success: false
+            
+        })	
+    }    		
+});
+
+
+
+
+
+
+};
+
+
+
+
 //Handle challenge/revenge request from Client
 Handler.prototype.revengeChallenge= function(msg, session, next) {
 	console.log("************************this is challenge request*********************************");

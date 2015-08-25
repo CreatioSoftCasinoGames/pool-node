@@ -569,7 +569,7 @@ next(null, {
 				playerId = msg.playerId;
 				
 		details.xp 						= !!msg.xp ? msg.xp : 0;
-		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
+		details.win_streak 		= msg.winner ? 1 : 0;
 		details.award 				= !!msg.award ? msg.award : 0;
 		details.win 					= !!msg.win ? msg.win : 0;
 		details.game_played 	= !!msg.gamePlayed ? msg.gamePlayed : 0;
@@ -583,16 +583,8 @@ next(null, {
 
 		details.ball_potted 	= !!msg.ball_potted ? msg.ball_potted : 0;
 		details.strike_count 	= !!msg.strike_count ? msg.strike_count : 0;
-		details.xp 						= !!msg.xp ? msg.xp : 0;
-		details.win_streak 		= !!msg.winStreak ? msg.winStreak : 0;
-		details.award 				= !!msg.award ? msg.award : 0;
-		details.win 					= !!msg.win ? msg.win : 0;
-		details.game_played 	= !!msg.gamePlayed ? msg.gamePlayed : 0;
 
 		dbLogger.updateGame({playerId: session.uid, details: details})
-		// }else if (msg.total_time_in_game){
-		// 	dbLogger.updateGame({playerId: session.uid, total_time_in_game:  msg.total_time_in_game})
-		// }
 		next();
 	},
 
@@ -655,6 +647,7 @@ next(null, {
 
 						//Update winner and loosers profile 
 						redis.hgetall("club_config:"+clubConfigId, function(err, clubConfigData) {
+							console.log(clubConfigData);
 							var winAmount = clubConfigData.winner_amount;
 							var winnerXp = clubConfigData.winner_xp;
 							var looserXp = clubConfigData.looser_xp;
@@ -665,14 +658,16 @@ next(null, {
 									award: winAmount,
 									winStreak: 1,
 									win: 1,
-									playerId: msg.winnerId
+									playerId: msg.winnerId,
+									winner: true
 								})
 							}
 							if(!!msg.looserId) {
 								console.log('---Looser Player----')
 								dbLogger.updatePlayer({
 									xp: looserXp,
-									playerId: msg.looserId
+									playerId: msg.looserId,
+									winner: false
 								})
 							}
 						})

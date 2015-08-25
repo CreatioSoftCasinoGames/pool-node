@@ -221,9 +221,9 @@ PoolRemote.prototype = {
 								redis.hgetall("club:"+clubId, function(err, data) {
 									if(!!data) {
 										console.log('Entry fees - ' + data.entry_fees);
-										dbLogger.updatePlayer({playerId: uid, gamePlayed: 1, deduce_amount: parseInt(data.entry_fees)});
+										dbLogger.updatePlayerData({playerId: uid, gamePlayed: 1, deduce_amount: parseInt(data.entry_fees)});
 									} else {
-										dbLogger.updatePlayer({playerId: uid, gamePlayed: 1});
+										dbLogger.updatePlayerData({playerId: uid, gamePlayed: 1});
 									}
 								})
 
