@@ -21,6 +21,22 @@ handler.getConnector = function(msg, session, next) {
 			connectors 			= this.app.getServersByType('connector'),
 			getProfileRoute = "/api/v1/sessions.json";
 
+			if(!!msg.getProfile) {
+		if((!!msg.device_id && msg.device_id != " ") || (!!msg.fb_id && msg.fb_id != " ")) {
+			profileId = !!msg.device_id ? msg.device_id : msg.fb_id;
+			backendFetcher.get(getProfileRoute+"/"+profileId+"/proceed_session.json", {}, self.app, function(user) {
+			  self.getHostAndPort({user: user, connectors: connectors, redis: redis}, function(data){
+			  	next(null,data);
+			  }); 
+			});
+		} else {
+			errorMessage = 'Wrong parameter while getting profile!';
+			errorMessage = errorMessage + "\n\n" + JSON.stringify(msg);
+			backendFetcher.postBug({bug_type: "Client - Login",test_mode: testMode, exception: errorMessage}, self.app)
+		}
+		return;
+	}
+
 	if (!!msg.is_guest && msg.is_guest != "false" && !!msg.loginType) {
 	  if (msg.loginType == "registration") {
 	    var createNewUser = Math.random().toString(36).slice(2) + Math.random().toString(16).slice(2);
@@ -130,7 +146,7 @@ handler.getConnector = function(msg, session, next) {
 //Create response for client with Server host, port and User data
 handler.getHostAndPort = function(msg, next) {
 	var hostAndPort = this.app.sessionService.service.sessions
-  if (msg.user != null) {
+  if (msg.user != null  && !msg.progress_existed) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
 
     //--saket login_token corresponding to given unique_id
@@ -153,6 +169,12 @@ handler.getHostAndPort = function(msg, next) {
       loginSuccess: true,
       yoursIp: msg.ip
     });
+  } 
+else if(msg.progress_existed) {
+  	next(null,{
+			loginSuccess	: false,
+			progressExists: true
+		});
   }
 },
 

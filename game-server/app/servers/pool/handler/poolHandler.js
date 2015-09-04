@@ -585,7 +585,9 @@ next(null, {
 		details.strike_count 	= !!msg.strike_count ? msg.strike_count : 0;
 
 		dbLogger.updateGame({playerId: session.uid, details: details})
-		next();
+		next(null, {
+					success: true
+				});
 	},
 
 	//Handle chat messages request from client

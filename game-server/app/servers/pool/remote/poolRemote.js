@@ -72,6 +72,8 @@ PoolRemote.prototype = {
 									backendFetcher.post("/api/v1/clubs.json", {club_config_id: clubConfigId}, that.app, function(data) {
 										if(data.valid) {
 											redisUtil.createClub(data.club, redis);
+                      console.log("This is Club data after redisUtil Creation");
+											console.log(data.club);
 											cb({
 												success: true,
 												clubId: parseInt(data.club.id)
@@ -129,7 +131,7 @@ PoolRemote.prototype = {
 
 		//Calculate online players
 		redis.hgetall("club:"+clubId, function(err, clubData) {
-			console.log("<<<<<<<<<<<<This is poolRemote clubdata from redis>>>>>>>>>>>>>>");
+			console.log("addToClub<<<<<<<<<<<<This is poolRemote clubdata from redis>>>>>>>>>>>>>>");
 			console.log(clubData);
 			//Update number of online players in this club
 			if(!!clubData) {
@@ -139,7 +141,7 @@ PoolRemote.prototype = {
 				  });
 				});
 			} else {
-				console.error('Redis details for this club - ' + clubId + ' not found!');
+				console.error('addToClub-Redis details for this club - ' + clubId + ' not found!');
 				next({
 					success: false,
 					message: 'Please sync and try again!'
@@ -265,10 +267,10 @@ PoolRemote.prototype = {
 			console.log('========= ALL PLAYERS =========');
 			console.log(allPlayers)
 			that.filterOpponent(clubConfigId, allPlayers, function(playerList){
-				console.log('========= FINAL PLAYERS =========');
+				console.log('========= FINAL PLAYERS IN MATCH =========');
 				console.log(playerList)
 				playerList = _.without(playerList, msg.playerId); //Remove the current player from list
-				console.log('========= FINAL OPPONENETS PLAYERS =========');
+				console.log('========= FINAL OPPONENT PLAYERS =========');
 				console.log(playerList);
 				if(playerList.length > 0 && !opponentFound) {
 					opponentFound = true;
@@ -332,8 +334,8 @@ PoolRemote.prototype = {
 														backendFetcher.get("/api/v1/users/"+data[0]+".json", {}, that.app, function(bot_player) {
 															redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
 															  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
-															  		console.log("The bot details are:");
-																		console.log("bot_player");
+															  		console.log("getopponent1>>The bot details are:");
+																		console.log(bot_player);
 																		channel.board.addPlayer(bot_player.login_token, true);
 																	that.returnData(msg.playerId, bot_player.login_token,  bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){
 																	  next(data)
@@ -352,7 +354,7 @@ PoolRemote.prototype = {
 																			redis.sadd("busy_bots", bot_player.login_token)
 																			redis.sadd("game_players", "game_player:"+bot_player.login_token);
 																			redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
-																			console.log("The bot details are:" +bot_player[0]);
+																			console.log("getopponent111>>The bot details are:" +bot_player[0]);
 																			console.log(bot_player);
 																			that.returnData(msg.playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){
 																			  next(data)
@@ -374,16 +376,16 @@ PoolRemote.prototype = {
 																	});
 															} else {
 																console.error('Opponent '+playerDetails.opponentId+' details not found !');
-																that.addBotasOpponent(msg.playerId, function(data){
-																	console.log("Bot added as Opponent");
+																that.addBotasOpponent(channel, msg.playerId, function(data){
+																	console.log("getopponent2>>Bot added as Opponent");
 																	next(data);
 																});
 															}												
 														})
 													} else {
 														console.error('Player '+msg.playerId+' details not found !');
-														that.addBotasOpponent(msg.playerId, function(data){
-																console.log("Bot added as Opponent");
+														that.addBotasOpponent(channel, msg.playerId, function(data){
+																console.log("getopponent3>>Bot added as Opponent");
 															next(data);
 														});
 													}	
@@ -401,10 +403,10 @@ PoolRemote.prototype = {
 		});
   },
 
-  addBotasOpponent: function(playerId, cb){
+  addBotasOpponent: function(channel, playerId, cb){
   	var that 	= this,
   			redis = that.app.get("redis");
-
+        
   	channel.board.getBotPlayerName("first_name", function(firstName){
 			channel.board.getBotPlayerName("last_name", function(lastName){
 				backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: firstName, last_name: lastName}, that.app, function(bot_player) {
@@ -414,7 +416,7 @@ PoolRemote.prototype = {
 								redis.sadd("busy_bots", bot_player.login_token)
 								redis.sadd("game_players", "game_player:"+bot_player.login_token);
 								redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
-								console.log("The bot details are:" +bot_player[0]);
+								console.log("addbotasopponent1>>The bot details are:" +bot_player[0]);
 								console.log(bot_player);
 								that.returnData(playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){			  
   								cb(data);
