@@ -12,6 +12,32 @@ var Handler = function(app) {
 
 var handler = Handler.prototype;
 
+handler.connectFacebook = function(msg, session, next) {
+	var self 						= this,
+			redis 					= self.app.get("redis"),
+			connectors 			= this.app.getServersByType('connector'),
+			getProfileRoute = "/api/v1/sessions.json";
+
+	if(!!msg.fb_id && !!msg.fb_friends_list && !!device_id) {
+		backendFetcher.post(getProfileRoute, {is_guest: true, device_id: createNewUser, first_name: msg.playerName }, self.app, function(user) {
+			next(null, {
+				newUser: !!data.new_user ? data.new_user : false,
+				device_id: !!data.device_id ? data.device_id : ""
+			});
+	  });
+	} else {
+		var errorMessage = 'Parameter mismatch! (Require fb_id, fb_friends_list and device_id)';
+		console.error(errorMessage);
+		console.log(msg);
+		next(null, {
+			success: false,
+			message: errorMessage,
+			params: msg
+		});
+	}
+
+},
+
 //Connect user with gate server and login form rails 
 //Different cases are used for Guest login and facebook login
 handler.getConnector = function(msg, session, next) {
@@ -146,6 +172,8 @@ handler.getConnector = function(msg, session, next) {
 //Create response for client with Server host, port and User data
 handler.getHostAndPort = function(msg, next) {
 	var hostAndPort = this.app.sessionService.service.sessions
+	console.log("This is host port and User");
+	console.log(msg.user);
   if (msg.user != null  && !msg.progress_existed) {
     var res = dispatcher.dispatch(msg.user.login_token, msg.connectors);
 
@@ -166,6 +194,7 @@ handler.getHostAndPort = function(msg, next) {
       host: res.host,
       port: res.clientPort,
       user: msg.user,
+      new_user: msg.new_user,
       loginSuccess: true,
       yoursIp: msg.ip
     });

@@ -101,8 +101,15 @@ Handler.prototype = {
 			firstName = !!msg.first_name && msg.first_name != "" ? msg.first_name : "Guest User";
 			lastName 	= !!msg.last_name && msg.last_name != "" ? msg.last_name : "";
 			email 		= !!msg.email && msg.email != "" ? msg.email : null;
+			device_id = !!msg.device_id? msg.device_id : null;
+			console.log(msg.device_id);
+			console.log(device_id);
 
-			backendFetcher.put("/api/v1/users/"+session.uid+"/connect_facebook", {fb_id: msg.fb_id, first_name: firstName, last_name: lastName, email: email, fb_friends_list: msg.fb_friends_list}, that.app, function(data) {
+			backendFetcher.put("/api/v1/users/"+session.uid+"/connect_facebook", {fb_id: msg.fb_id, first_name: firstName, last_name: lastName, email: email, fb_friends_list: msg.fb_friends_list, device_id: msg.device_id}, that.app, function(data) {
+
+				 console.log("Data from rails for facebook login");
+				 console.log(data);
+
 				if(!!data.login_token) {
 					//Send broadcast to this previous fb user
 					redis.hmget("game_player:"+session.uid, "player_server_id", function(err, serverId){
@@ -114,12 +121,14 @@ Handler.prototype = {
 					});
 					next(null, {
 						success: true,
-						message: "User has been connected with facebook!"
+						message: "User has been connected with facebook!",
+						new_user: data.fb_new_user
 					})
 				} else {
 					next(null, {
 						success: true,
-						message: "User has been connected with facebook!"
+						message: "User has been connected with facebook!",
+						new_user: data.fb_new_user
 					})
 				}
 			});
