@@ -407,25 +407,27 @@ PoolRemote.prototype = {
   	var that 	= this,
   			redis = that.app.get("redis");
         
-  	channel.board.getBotPlayerName("first_name", function(firstName){
-			channel.board.getBotPlayerName("last_name", function(lastName){
-				backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: firstName, last_name: lastName}, that.app, function(bot_player) {
-					redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
+  	redis.hgetall("game_player:"+msg.playerId, function(err, playerDetails) {
+	  	channel.board.getBotPlayerName("first_name", function(firstName){
+				channel.board.getBotPlayerName("last_name", function(lastName){
+					backendFetcher.post("/api/v1/sessions.json", {is_dummy: true, first_name: firstName, last_name: lastName}, that.app, function(bot_player) {
+						redis.sadd("game_players", "game_player:"+bot_player.login_token, function(err, botData){
 						  redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true, "device_avatar_id", parseInt(bot_player.device_avatar_id), function(err, botDetails){
 								channel.board.addPlayer(bot_player.login_token, true);
 								redis.sadd("busy_bots", bot_player.login_token)
 								redis.sadd("game_players", "game_player:"+bot_player.login_token);
 								redis.hmset("game_player:"+bot_player.login_token, "player_id", bot_player.login_token, "player_level", bot_player.current_level, "player_name", bot_player.full_name, "player_xp", bot_player.xp, "player_image", bot_player.image_url, "playing", true)
-								console.log("addbotasopponent1>>The bot details are:" +bot_player[0]);
+								console.log("addbotasopponent1>>The bot details are:" +bot_player);
 								console.log(bot_player);
 								that.returnData(playerId, bot_player.login_token, bot_player.full_name, bot_player.xp, bot_player.current_level, bot_player.image_url, String(playerDetails.player_ip), true, true, bot_player.device_avatar_id, function(data){			  
-  								cb(data);
+									cb(data);
 								});
 							});
 						});
 					});
 				});
 			});
+		});
   },
 
   filterOpponent: function(clubConfigId, allPlayers, cb) {
